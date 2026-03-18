@@ -157,3 +157,24 @@ td {
 tr:nth-child(even) {
     background-color: #f2f2f2;
 }
+
+/*=================
+project section styling
+=================*/
+
+#projects li {
+    margin-bottom: 12 px;
+    line-height: 1.8;   
+}
+
+/* Project links styling */
+#projects a {
+    color: blue;
+    text-decoration: none;
+    transition: 0.3s;
+}
+
+/* Hover effect */
+#projects a:hover {
+    color: red;
+}
