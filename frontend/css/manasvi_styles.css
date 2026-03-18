@@ -124,3 +124,36 @@ details ul ul {
 details ul li:hover {
     color: #023e8a;
 }
+
+/*=================
+Education Section Styling           
+=================*/
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+   
+}
+
+/* Borders */
+table, th, td {
+    border: 2px solid black;
+}
+
+/* Table header styling */
+th {
+    padding: 10px;
+    text-align: center;
+    background-color: #0077b6;
+    color: white;
+}
+
+/* Table data */
+td {
+    padding: 10px;
+}
+
+/* Alternate changing row color */
+tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
