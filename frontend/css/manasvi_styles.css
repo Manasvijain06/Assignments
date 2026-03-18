@@ -19,9 +19,10 @@ header{
     padding: 20px 0;
     text-align: center;
 }
+/* Profile image styling */
 header img {
     width: 150px;
     height: 150px;
-    border-radius: 50%; /* makes image circular */
+    border-radius: 50%; /* this makes image circular */
     margin-top: 10px;
 }
