@@ -42,3 +42,17 @@ students.forEach(student => {
     const totalMarks = calculateTotalMarks(student);
     console.log(student.name + " has total marks: " + totalMarks);
 });
+
+// Function to calculate average marks
+function calculateAverage(student) {
+  const total = calculateTotalMarks(student);
+
+  // divide total by number of subjects
+  return total / student.marks.length;
+}
+
+// print average marks
+students.forEach(student => {
+  const avg = calculateAverage(student);
+  console.log(student.name + " Average Marks: " + avg);
+});
