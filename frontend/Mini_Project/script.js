@@ -236,3 +236,25 @@ function loadCategories() {
     dropdown.appendChild(option);
   });
 }
+// SPINNER INIT
+async function init() {
+  const spinner = document.getElementById("spinner");
+
+  spinner.style.display = "block";
+
+  document.querySelectorAll("input, select, button").forEach(el => el.disabled = true);
+
+  loadData();
+
+  await new Promise(resolve => setTimeout(resolve, 1500));
+
+  spinner.style.display = "none";
+
+  document.querySelectorAll("input, select, button").forEach(el => el.disabled = false);
+
+  loadCategories();
+  filteredProducts = [...products];
+  applyFilters();
+}
+
+init();
