@@ -173,3 +173,28 @@ input, select {
 .form-section button:hover {
   background: #16a34a;
 }
+
+/* SPINNER LOADER */
+.spinner {
+  border: 6px solid #e5e7eb;      
+  border-top: 6px solid #2563eb;  
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  margin: 40px auto;
+  animation: spin 1s linear infinite;
+  display: none; /* hidden by default */
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* RESPONSIVE */
+@media (max-width: 600px) {
+  .controls {
+    flex-direction: column;
+  }
+}
