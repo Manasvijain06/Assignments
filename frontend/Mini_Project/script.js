@@ -16,3 +16,14 @@ const defaultProducts = [
   { id: 7, name: "Bag", price: 1500, stock: 6, category: "accessories" },
   { id: 8, name: "Notebook", price: 100, stock: 20, category: "books" }
 ];
+
+// LOAD DATA
+function loadData() {
+  const data = localStorage.getItem("products");
+  products = data ? JSON.parse(data) : defaultProducts;
+}
+
+// SAVE DATA
+function saveData() {
+  localStorage.setItem("products", JSON.stringify(products));
+}
