@@ -145,6 +145,10 @@ function applyFilters() {
 
 // DELETE
 function deleteProduct(id) {
+  const confirmDelete = confirm("Are you sure you want to delete this product?");
+
+  if (!confirmDelete) return;
+
   products = products.filter(p => p.id !== id);
   saveData();
   applyFilters();
