@@ -10,3 +10,33 @@ body {
   color: #e2e8f0;
   padding: 20px;
 }
+
+/* styling HEADER */
+header {
+  background: linear-gradient(135deg, #1e293b, #0ea5e9);
+  padding: 20px;
+  text-align: center;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+
+/* CONTROLS */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  background: #020617;
+  padding: 40px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  border: 1px solid #1e293b;
+}
+
+input, select {
+  padding: 15px;
+  border-radius: 6px;
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: white;
+  flex: 1;
+}
