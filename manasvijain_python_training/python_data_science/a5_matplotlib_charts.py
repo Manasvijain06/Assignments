@@ -1,12 +1,12 @@
 import matplotlib.pyplot as plt
 
 # Data
-departments = ["HR", "IT", "Finance"]
-employees = [5, 12, 7]
+Departments = ["HR", "IT", "Finance"]
+Employees = [5, 12, 7]
 
 # 1.Create Bar Chart
 plt.figure()
-plt.bar(departments, employees)
+plt.bar(Departments, Employees)
 plt.title("Employees by Department")
 plt.xlabel("Department")
 plt.ylabel("Number of Employees")
@@ -14,13 +14,13 @@ plt.show()
 
 # 2.Create Line Chart
 plt.figure()
-plt.plot(departments, employees, marker="o")
+plt.plot(Departments, Employees, marker="o")
 plt.title("Employees by Department")
 plt.xlabel("Department")
 plt.ylabel("Number of Employees")
 plt.show()
 
-# 3. Histogram
+# 3.Create Histogram using salaries
 salaries = [30000, 40000, 50000, 60000, 45000]
 
 plt.figure()
