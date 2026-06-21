@@ -18,9 +18,9 @@ def contains_word(sentence: str, word: str) -> bool:
 if __name__ == "__main__":
     sentence: str = ("Python is a powerful programming language.").lower()
 
-    search_word: str = input("Enter word to search:").lower()
+    word: str = input("Enter word to search:").lower()
 
-    if contains_word(sentence, search_word):
+    if contains_word(sentence, word):
         print("Word found.")
     else:
         print("Word not found.")
