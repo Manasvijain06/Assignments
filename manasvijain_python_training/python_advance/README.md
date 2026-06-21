@@ -169,6 +169,7 @@ pytest testing_debugging/q32.py -v
 python -m pdb testing_debugging/q34.py
 ```
 
+```
 Inside pdb commands:
 l → List code
 n → Next line execution
@@ -176,6 +177,7 @@ s → Step into function
 c → Continue execution
 p variable → Print variable value
 q → Quit debugger
+```
 
 ---
 
