@@ -1,0 +1,47 @@
+# =====================
+# Python
+# =====================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual Environment
+venv/
+env/
+
+
+# Pytest cache
+.pytest_cache/
+
+# Environment variables
+.env
+
+# =====================
+# IDE
+# =====================
+.vscode/
+.idea/
+
+# =====================
+# OS Files
+# =====================
+.DS_Store
+Thumbs.db
+
+# =====================
+# Logs
+# =====================
+*.log
+
+# =====================
+# Node (Frontend)
+# =====================
+node_modules/
+dist/
+build/
+
+# Vite
+.vite/
+
+.oxlintrc.json
