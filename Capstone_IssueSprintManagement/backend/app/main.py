@@ -1,22 +1,19 @@
 from fastapi import FastAPI
-from app.database.mongodb import db
+from fastapi.middleware.cors import CORSMiddleware
+from app.router import auth
 
-app = FastAPI()
+app = FastAPI(title="Issue Sprint Management System")
+
+app.include_router(auth.router, prefix="/auth", tags=["Auth"])
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/")
-def home():
-    return {"message": "API running"}
-
-@app.get("/db-test")
-def db_test():
-    try:
-        collections = db.list_collection_names()
-        return {
-            "status": "MongoDB Connected Successfully",
-            "collections": collections
-        }
-    except Exception as e:
-        return {
-            "status": "MongoDB Connection Failed",
-            "error": str(e)
-        }
+def root():
+    return {"message": "Issue Sprint Management System API"}

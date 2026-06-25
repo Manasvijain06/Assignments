@@ -1,6 +1,13 @@
 from pymongo import MongoClient
-from app.core.config import MONGO_URI, DATABASE_NAME
+from dotenv import load_dotenv
+import os
 
-client = MongoClient(MONGO_URI)
+load_dotenv()
 
-db = client[DATABASE_NAME]
+MONGO_URL = os.getenv("MONGO_URL")
+
+client = MongoClient(MONGO_URL)
+
+db = client.issue_sprint_db
+
+users_collection = db.users
