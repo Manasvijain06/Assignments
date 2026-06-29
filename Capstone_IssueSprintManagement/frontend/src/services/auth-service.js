@@ -1,17 +1,15 @@
-import axios from "axios";
-
-const API_URL = "http://127.0.0.1:8000/auth";
+import { _post } from "../api/apiManager";
 
 export const registerUser = async (userData) => {
     return axios.post(
-    `${API_URL}/register`,
+    "auth/register",
     userData
     );
 };
 
 export const loginUser = async (userData) => {
     return axios.post(
-    `${API_URL}/login`,
+    "auth/login",
     userData
     );
 };
