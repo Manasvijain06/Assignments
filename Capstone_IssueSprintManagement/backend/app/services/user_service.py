@@ -1,3 +1,11 @@
+import base64
+
+from app.exceptions.user_exceptions import (
+    UserAlreadyExistsException,
+    InvalidPasswordEncodingException,
+)
+
+from app.models.user_model import user_model
 from app.utils.security import hash_password
 
 
@@ -7,15 +15,27 @@ class UserService:
         self.collection = db["users"]
 
     def create_user(self, user_data):
-        # check duplicate email
-        if self.collection.find_one({"email": user_data.email}):
-            return None
+        # Check duplicate email
+        existing_user = self.collection.find_one({"email": user_data.email})
+        if existing_user:
+            raise UserAlreadyExistsException()
 
-        hashed_pwd = hash_password(user_data.password)
+        # Decode Base64 password sent from frontend
+        try:
+            decoded_password = base64.b64decode(user_data.password).decode("utf-8")
+        except Exception:
+            raise InvalidPasswordEncodingException()
 
-        user_dict = user_data.model_dump()
-        user_dict["password"] = hashed_pwd
+        # Hash decoded password
+        hashed_password = hash_password(decoded_password)
 
-        result = self.collection.insert_one(user_dict)
+        new_user = user_model(
+            name=user_data.name,
+            email=user_data.email,
+            hashed_password=hashed_password,
+            role=user_data.role
+        )
+
+        result = self.collection.insert_one(new_user)
 
         return str(result.inserted_id)

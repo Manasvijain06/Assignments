@@ -7,7 +7,7 @@ def hash_password(password: str) -> str:
 
 
 # Verify password (for future login)
-def verify_password(plain_password, hashed_password):
+def verify_password(plain_password, hashed_password) -> bool:
     return bcrypt.checkpw(
         plain_password.encode("utf-8"),
         hashed_password.encode("utf-8")

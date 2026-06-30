@@ -1,31 +1,41 @@
 from fastapi import APIRouter, HTTPException
-from app.schemas.user_schema import UserRegister
-from app.database.mongodb import users_collection
-from app.utils.security import hash_password
+
+from app.schemas.user_schema import UserRegister, UserRegisterResponse
+from app.database import mongodb
+from app.services.user_service import UserService
+from app.exceptions.user_exceptions import (
+    UserAlreadyExistsException,
+    InvalidPasswordEncodingException,
+)
 
 router = APIRouter()
 
-@router.post("/register")
+@router.post("/register", response_model=UserRegisterResponse)
 def register_user(user: UserRegister):
 
-    # check if user already exists
-    existing_user = users_collection.find_one({"email": user.email})
-    if existing_user:
-        raise HTTPException(status_code=409, detail="Email already registered")
+    if mongodb.db is None:
+        raise HTTPException(
+            status_code=500,
+            detail="Database connection not initialized"
+        )
 
-    # hash password
-    hashed_pw = hash_password(user.password)
+    try:
+        user_service = UserService(mongodb.db)
+        user_id = user_service.create_user(user)
 
-    # create user document
-    user_data = {
-        "name": user.name,
-        "email": user.email,
-        "password": hashed_pw,
-        "role": user.role
-    }
+        return {
+            "message": "User registered successfully",
+            "user_id": user_id
+        }
 
-    result = users_collection.insert_one(user_data)
+    except UserAlreadyExistsException as exc:
+        raise HTTPException(
+            status_code=409,
+            detail=exc.message
+        )
 
-    return {"message": "User registered successfully",
-            "user_id": str(result.inserted_id)
-            }
+    except InvalidPasswordEncodingException as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=exc.message
+        )
