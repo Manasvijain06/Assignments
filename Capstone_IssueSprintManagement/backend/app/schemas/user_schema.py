@@ -42,3 +42,8 @@ class UserLoginResponse(BaseModel):
     name: str
     email: EmailStr
     role: str
+
+class AdminAccessResponse(BaseModel):
+    message: str
+    email: EmailStr
+    role: str

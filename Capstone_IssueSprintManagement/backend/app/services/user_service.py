@@ -5,6 +5,10 @@ from app.exceptions.user_exceptions import (
     InvalidPasswordEncodingException,
     InvalidCredentialsException,
 )
+from app.exceptions.user_exceptions import (
+    UserNotFoundException,
+    AdminAccessRequiredException,
+)
 
 from app.models.user_model import user_model
 from app.utils.security import hash_password, verify_password
@@ -63,6 +67,20 @@ class UserService:
         return {
             "user_id": str(user["_id"]),
             "name": user["name"],
+            "email": user["email"],
+            "role": user["role"]
+        }
+
+    def check_admin_access(self, email: str):
+        user = self.collection.find_one({"email": email})
+
+        if not user:
+            raise UserNotFoundException()
+
+        if user["role"] != "admin":
+            raise AdminAccessRequiredException()
+
+        return {
             "email": user["email"],
             "role": user["role"]
         }
