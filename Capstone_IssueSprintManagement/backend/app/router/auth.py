@@ -1,65 +1,65 @@
 from fastapi import APIRouter, HTTPException
-from app.schemas.user_schema import UserRegister, UserLogin
-from app.database.mongodb import users_collection
-from app.utils.security import hash_password
-from app.utils.security import verify_password
-from app.utils.jwt_handler import create_access_token
+
+from app.schemas.user_schema import (
+    UserRegister,
+    UserRegisterResponse,
+    UserLogin,
+    UserLoginResponse,)
+from app.database import mongodb
+from app.services.user_service import UserService
+from app.exceptions.user_exceptions import (
+    UserAlreadyExistsException,
+    InvalidPasswordEncodingException,
+    InvalidCredentialsException,
+)
+
 router = APIRouter()
 
-@router.post("/register")
+@router.post("/register", response_model=UserRegisterResponse)
 def register_user(user: UserRegister):
 
-    # check if user already exists
-    existing_user = users_collection.find_one({"email": user.email})
-    if existing_user:
-        raise HTTPException(status_code=409, detail="Email already registered")
+    if mongodb.db is None:
+        raise HTTPException(
+            status_code=500,
+            detail="Database connection not initialized"
+        )
 
-    # hash password
-    hashed_pw = hash_password(user.password)
+    try:
+        user_service = UserService(mongodb.db)
+        user_id = user_service.create_user(user)
 
-    # create user document
-    user_data = {
-        "name": user.name,
-        "email": user.email,
-        "password": hashed_pw,
-        "role": user.role
-    }
+        return {
+            "message": "User registered successfully",
+            "user_id": user_id
+        }
 
-    result = users_collection.insert_one(user_data)
+    except UserAlreadyExistsException as exc:
+        raise HTTPException(status_code=409, detail=exc.message)
 
-    return {"message": "User registered successfully",
-            "user_id": str(result.inserted_id)
-            }
-# login
-@router.post("/login")
+    except InvalidPasswordEncodingException as exc:
+        raise HTTPException(status_code=400, detail=exc.message)
+
+
+@router.post("/login", response_model=UserLoginResponse)
 def login_user(user: UserLogin):
 
-    db_user = users_collection.find_one(
-        {"email": user.email}
-    )
-
-    if not db_user:
+    if mongodb.db is None:
         raise HTTPException(
-            status_code=401,
-            detail="Invalid email or password"
+            status_code=500,
+            detail="Database connection not initialized"
         )
 
-    if not verify_password(
-        user.password,
-        db_user["password"]
-    ):
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid email or password"
-        )
+    try:
+        user_service = UserService(mongodb.db)
+        logged_in_user = user_service.login_user(user)
 
-    token = create_access_token({
-        "user_id": str(db_user["_id"]),
-        "email": db_user["email"],
-        "role": db_user["role"]
-    })
+        return {
+            "message": "Login successful",
+            **logged_in_user
+        }
 
-    return {
-        "access_token": token,
-        "token_type": "bearer"
-    }
+    except InvalidCredentialsException as exc:
+        raise HTTPException(status_code=401, detail=exc.message)
+
+    except InvalidPasswordEncodingException as exc:
+        raise HTTPException(status_code=400, detail=exc.message)

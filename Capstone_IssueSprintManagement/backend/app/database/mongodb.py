@@ -1,13 +1,31 @@
+import os
 from pymongo import MongoClient
 from dotenv import load_dotenv
-import os
 
 load_dotenv()
 
-MONGO_URL = os.getenv("MONGO_URL")
+client = None
+db = None
+users_collection = None
 
-client = MongoClient(MONGO_URL)
+def connect_db():
+    global client, db, users_collection
 
-db = client.issue_sprint_db
+    MONGO_URL = os.getenv("MONGO_URL")
 
-users_collection = db.users
+    if not MONGO_URL:
+        raise ValueError("MONGO_URL is missing in environment variables")
+
+    client = MongoClient(MONGO_URL)
+
+    db = client.issue_sprint_db
+
+    users_collection = db.users
+    print("MongoDB connected successfully")
+
+def close_db():
+    global client
+
+    if client:
+        client.close()
+        print("MongoDB connection closed")

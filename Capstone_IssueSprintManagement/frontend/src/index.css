@@ -26,3 +26,13 @@ button {
 button {
   cursor: pointer;
 }
+
+.error {
+  color: red;
+  margin-top: 5px;
+}
+
+.success {
+  color: green;
+  margin-top: 20px;
+}

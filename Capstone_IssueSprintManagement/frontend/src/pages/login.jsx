@@ -11,6 +11,7 @@ function Login() {
 
   const [errors, setErrors] = useState({});
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -40,17 +41,28 @@ function Login() {
 
     setErrors({});
     setMessage("");
+    setLoading(true);
 
     try {
-      const response = await loginUser(formData);
+      const encodedFormData = {
+        ...formData,
+        password: btoa(formData.password),
+      };
 
-      setMessage(response.message || "Login Successful");
+      const response = await loginUser(encodedFormData);
+
+      setMessage(response.message);
+
+      localStorage.setItem("user", JSON.stringify(response));
+
       setFormData({
         email: "",
         password: "",
       });
     } catch (error) {
-      setMessage(error.detail || "Invalid Email or Password");
+      setMessage(error.detail || "Login failed.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -59,47 +71,37 @@ function Login() {
       <h2>User Login</h2>
 
       <form onSubmit={handleSubmit}>
-        <input
-          type="email"
-          name="email"
-          placeholder="Enter Email"
-          value={formData.email}
-          onChange={handleChange}
-        />
+        <div>
+          <label>Email</label>
+          <input
+            type="email"
+            name="email"
+            placeholder="Enter your email"
+            value={formData.email}
+            onChange={handleChange}
+          />
+          {errors.email && <p className="error">{errors.email}</p>}
+        </div>
 
-        {errors.email && (
-          <p style={{ color: "red", marginTop: "5px" }}>{errors.email}</p>
-        )}
-        <br />
+        <div>
+          <label>Password</label>
+          <input
+            type="password"
+            name="password"
+            placeholder="Enter your password"
+            value={formData.password}
+            onChange={handleChange}
+          />
+          {errors.password && <p className="error">{errors.password}</p>}
+        </div>
 
-        <input
-          type="password"
-          name="password"
-          placeholder="Enter Password"
-          value={formData.password}
-          onChange={handleChange}
-        />
-
-        {errors.password && (
-          <p style={{ color: "red", marginTop: "5px" }}>{errors.password}</p>
-        )}
-
-        <br />
-
-        <button type="submit">Login</button>
+        <button type="submit" disabled={loading}>
+          {loading ? "Logging in..." : "Login"}
+        </button>
       </form>
 
-      <p style={{ marginTop: "15px" }}>
-        Don't have an account? <Link to="/register">Register</Link>
-      </p>
-
       {message && (
-        <p
-          style={{
-            marginTop: "20px",
-            color: message.toLowerCase().includes("success") ? "green" : "red",
-          }}
-        >
+        <p className={message.includes("successful") ? "success" : "error"}>
           {message}
         </p>
       )}

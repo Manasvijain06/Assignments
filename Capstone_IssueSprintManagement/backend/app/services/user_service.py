@@ -1,4 +1,13 @@
-from app.utils.security import hash_password
+import base64
+
+from app.exceptions.user_exceptions import (
+    UserAlreadyExistsException,
+    InvalidPasswordEncodingException,
+    InvalidCredentialsException,
+)
+
+from app.models.user_model import user_model
+from app.utils.security import hash_password, verify_password
 
 
 class UserService:
@@ -7,15 +16,53 @@ class UserService:
         self.collection = db["users"]
 
     def create_user(self, user_data):
-        # check duplicate email
-        if self.collection.find_one({"email": user_data.email}):
-            return None
+        # Check duplicate email
+        existing_user = self.collection.find_one({"email": user_data.email})
+        if existing_user:
+            raise UserAlreadyExistsException()
 
-        hashed_pwd = hash_password(user_data.password)
+        # Decode Base64 password sent from frontend
+        try:
+            decoded_password = base64.b64decode(user_data.password).decode("utf-8")
+        except Exception:
+            raise InvalidPasswordEncodingException()
 
-        user_dict = user_data.model_dump()
-        user_dict["password"] = hashed_pwd
+        # Hash decoded password
+        hashed_password = hash_password(decoded_password)
 
-        result = self.collection.insert_one(user_dict)
+        new_user = user_model(
+            name=user_data.name,
+            email=user_data.email,
+            hashed_password=hashed_password,
+            role=user_data.role
+        )
+
+        result = self.collection.insert_one(new_user)
 
         return str(result.inserted_id)
+
+    def login_user(self, login_data):
+        user = self.collection.find_one({"email": login_data.email})
+
+        if not user:
+            raise InvalidCredentialsException()
+
+        try:
+            decoded_password = base64.b64decode(login_data.password).decode("utf-8")
+        except Exception:
+            raise InvalidPasswordEncodingException()
+
+        is_password_valid = verify_password(
+            decoded_password,
+            user["password"]
+        )
+
+        if not is_password_valid:
+            raise InvalidCredentialsException()
+
+        return {
+            "user_id": str(user["_id"]),
+            "name": user["name"],
+            "email": user["email"],
+            "role": user["role"]
+        }
