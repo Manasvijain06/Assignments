@@ -1,14 +1,15 @@
 import base64
 import re
-from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import Literal
+
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
 class UserRegister(BaseModel):
     name: str
     email: EmailStr
     password: str = Field(description="Base64-encoded password")
-    role: Literal["admin", "member", "viewer"] = "member"
+    role: Literal["admin", "member", "viewer"]
 
     @field_validator("password")
     @classmethod
@@ -45,5 +46,10 @@ class UserLoginResponse(BaseModel):
 
 class AdminAccessResponse(BaseModel):
     message: str
+    email: EmailStr
+    role: str
+
+class UserListResponse(BaseModel):
+    name: str
     email: EmailStr
     role: str

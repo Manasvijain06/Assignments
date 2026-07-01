@@ -1,73 +1,69 @@
-import base64
-import uuid
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 from main import app
+from app.exceptions.user_exceptions import (
+    UserNotFoundException,
+    AdminAccessRequiredException,
+)
+
+client = TestClient(app)
 
 
-def encode_password(password: str) -> str:
-    return base64.b64encode(password.encode()).decode()
+@patch("app.router.admin.mongodb.db", new={})
+@patch("app.router.admin.UserService")
+def test_admin_can_access_admin_endpoint(mock_user_service):
+    mock_user_service.return_value.check_admin_access.return_value = {
+        "email": "admin@example.com",
+        "role": "admin",
+    }
 
-
-def create_user(client, email: str, role: str):
-    return client.post(
-        "/auth/register",
-        json={
-            "name": "Test User",
-            "email": email,
-            "password": encode_password("Password123!"),
-            "role": role,
-        },
+    response = client.get(
+        "/users/admin-only",
+        params={"email": "admin@example.com"},
     )
-
-
-def test_admin_can_access_admin_endpoint():
-    admin_email = f"admin_{uuid.uuid4().hex[:8]}@example.com"
-
-    with TestClient(app) as client:
-        create_user(client, admin_email, "admin")
-
-        response = client.get(
-            "/users/admin-only",
-            params={"email": admin_email}
-        )
 
     assert response.status_code == 200
     assert response.json()["message"] == "Admin access granted"
     assert response.json()["role"] == "admin"
 
 
-def test_member_cannot_access_admin_endpoint():
-    member_email = f"member_{uuid.uuid4().hex[:8]}@example.com"
+@patch("app.router.admin.mongodb.db", new={})
+@patch("app.router.admin.UserService")
+def test_member_cannot_access_admin_endpoint(mock_user_service):
+    mock_user_service.return_value.check_admin_access.side_effect = (
+        AdminAccessRequiredException()
+    )
 
-    with TestClient(app) as client:
-        create_user(client, member_email, "member")
-
-        response = client.get(
-            "/users/admin-only",
-            params={"email": member_email}
-        )
+    response = client.get(
+        "/users/admin-only",
+        params={"email": "member@example.com"},
+    )
 
     assert response.status_code == 403
     assert response.json()["detail"] == "Admin access required"
 
 
-def test_user_not_found():
-    with TestClient(app) as client:
-        response = client.get(
-            "/users/admin-only",
-            params={"email": f"missing_{uuid.uuid4().hex[:8]}@example.com"}
-        )
+@patch("app.router.admin.mongodb.db", new={})
+@patch("app.router.admin.UserService")
+def test_user_not_found(mock_user_service):
+    mock_user_service.return_value.check_admin_access.side_effect = (
+        UserNotFoundException()
+    )
+
+    response = client.get(
+        "/users/admin-only",
+        params={"email": "missing@example.com"},
+    )
 
     assert response.status_code == 404
     assert response.json()["detail"] == "User not found"
 
 
 def test_invalid_email():
-    with TestClient(app) as client:
-        response = client.get(
-            "/users/admin-only",
-            params={"email": "invalid-email"}
-        )
+    response = client.get(
+        "/users/admin-only",
+        params={"email": "invalid-email"},
+    )
 
     assert response.status_code == 422

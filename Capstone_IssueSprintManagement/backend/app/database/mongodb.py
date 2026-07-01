@@ -7,9 +7,10 @@ load_dotenv()
 client = None
 db = None
 users_collection = None
+projects_collection = None
 
 def connect_db():
-    global client, db, users_collection
+    global client, db, users_collection, projects_collection
 
     MONGO_URL = os.getenv("MONGO_URL")
 
@@ -21,6 +22,7 @@ def connect_db():
     db = client.issue_sprint_db
 
     users_collection = db.users
+    projects_collection = db.projects
     print("MongoDB connected successfully")
 
 def close_db():

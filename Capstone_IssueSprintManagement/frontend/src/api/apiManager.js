@@ -44,9 +44,9 @@ export const _put = async (url, data) => {
 };
 
 // DELETE
-export const _delete = async (url) => {
+export const _delete = async (url, data = {}) => {
     try {
-        const response = await api.delete(url);
+        const response = await api.delete(url, { data });
         return response.data;
     } catch (error) {
         throw error.response?.data || {

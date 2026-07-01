@@ -1,5 +1,7 @@
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import EmailStr
+from typing import List
+from app.schemas.user_schema import AdminAccessResponse, UserListResponse
 
 from app.database import mongodb
 from app.exceptions.user_exceptions import (
@@ -21,18 +23,26 @@ def admin_only_endpoint(email: EmailStr = Query(...)):
             detail="Database connection not initialized"
         )
 
-    try:
-        user_service = UserService(mongodb.db)
-        user = user_service.check_admin_access(email)
 
-        return {
+    user_service = UserService(mongodb.db)
+    user = user_service.check_admin_access(email)
+
+    return {
             "message": "Admin access granted",
             "email": user["email"],
             "role": user["role"]
         }
 
-    except UserNotFoundException as exc:
-        raise HTTPException(status_code=404, detail=exc.message)
 
-    except AdminAccessRequiredException as exc:
-        raise HTTPException(status_code=403, detail=exc.message)
+@router.get("/by-role", response_model=List[UserListResponse])
+def get_users_by_role(role: str):
+
+    if mongodb.db is None:
+        raise HTTPException(
+            status_code=500,
+            detail="Database connection not initialized"
+        )
+
+    user_service = UserService(mongodb.db)
+
+    return user_service.get_users_by_role(role)
