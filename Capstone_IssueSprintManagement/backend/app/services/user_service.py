@@ -3,10 +3,11 @@ import base64
 from app.exceptions.user_exceptions import (
     UserAlreadyExistsException,
     InvalidPasswordEncodingException,
+    InvalidCredentialsException,
 )
 
 from app.models.user_model import user_model
-from app.utils.security import hash_password
+from app.utils.security import hash_password, verify_password
 
 
 class UserService:
@@ -39,3 +40,29 @@ class UserService:
         result = self.collection.insert_one(new_user)
 
         return str(result.inserted_id)
+
+    def login_user(self, login_data):
+        user = self.collection.find_one({"email": login_data.email})
+
+        if not user:
+            raise InvalidCredentialsException()
+
+        try:
+            decoded_password = base64.b64decode(login_data.password).decode("utf-8")
+        except Exception:
+            raise InvalidPasswordEncodingException()
+
+        is_password_valid = verify_password(
+            decoded_password,
+            user["password"]
+        )
+
+        if not is_password_valid:
+            raise InvalidCredentialsException()
+
+        return {
+            "user_id": str(user["_id"]),
+            "name": user["name"],
+            "email": user["email"],
+            "role": user["role"]
+        }

@@ -31,3 +31,14 @@ class UserRegister(BaseModel):
 class UserRegisterResponse(BaseModel):
     message: str
     user_id: str
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str = Field(description="Base64-encoded password")
+
+class UserLoginResponse(BaseModel):
+    message: str
+    user_id: str
+    name: str
+    email: EmailStr
+    role: str

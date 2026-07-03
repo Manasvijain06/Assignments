@@ -1,13 +1,12 @@
 import { useState } from "react";
-import { registerUser } from "../services/auth-Service";
-import { validateRegisterForm } from "../utils/validation";
+import { loginUser } from "../services/auth-Service";
+import { validateLoginForm } from "../utils/validation";
+import { Link } from "react-router-dom";
 
-function Register() {
+function Login() {
   const [formData, setFormData] = useState({
-    name: "",
     email: "",
     password: "",
-    role: "member",
   });
 
   const [errors, setErrors] = useState({});
@@ -26,13 +25,14 @@ function Register() {
       ...prev,
       [name]: "",
     }));
+
     setMessage("");
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const validationErrors = validateRegisterForm(formData);
+    const validationErrors = validateLoginForm(formData);
 
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
@@ -44,22 +44,23 @@ function Register() {
     setLoading(true);
 
     try {
-      const encryptedFormData = {
+      const encodedFormData = {
         ...formData,
         password: btoa(formData.password),
       };
-      const response = await registerUser(encryptedFormData);
+
+      const response = await loginUser(encodedFormData);
 
       setMessage(response.message);
 
+      localStorage.setItem("user", JSON.stringify(response));
+
       setFormData({
-        name: "",
         email: "",
         password: "",
-        role: "member",
       });
     } catch (error) {
-      setMessage(error.detail || "Registration Failed");
+      setMessage(error.detail || "Login failed.");
     } finally {
       setLoading(false);
     }
@@ -67,21 +68,9 @@ function Register() {
 
   return (
     <div className="container">
-      <h2>User Registration</h2>
+      <h2>User Login</h2>
 
       <form onSubmit={handleSubmit}>
-        <div>
-          <label>Name</label>
-          <input
-            type="text"
-            name="name"
-            placeholder="Enter your name"
-            value={formData.name}
-            onChange={handleChange}
-          />
-          {errors.name && <p className="error">{errors.name}</p>}
-        </div>
-
         <div>
           <label>Email</label>
           <input
@@ -99,30 +88,20 @@ function Register() {
           <input
             type="password"
             name="password"
-            placeholder="Enter strong password"
+            placeholder="Enter your password"
             value={formData.password}
             onChange={handleChange}
           />
           {errors.password && <p className="error">{errors.password}</p>}
         </div>
 
-        <div>
-          <label>Role</label>
-          <select name="role" value={formData.role} onChange={handleChange}>
-            <option value="member">Member</option>
-            <option value="admin">Admin</option>
-            <option value="viewer">Viewer</option>
-          </select>
-          {errors.role && <p className="error">{errors.role}</p>}
-        </div>
-
         <button type="submit" disabled={loading}>
-          {loading ? "Registering..." : "Register"}
+          {loading ? "Logging in..." : "Login"}
         </button>
       </form>
 
       {message && (
-        <p className={message.includes("successfully") ? "success" : "error"}>
+        <p className={message.includes("successful") ? "success" : "error"}>
           {message}
         </p>
       )}
@@ -130,4 +109,4 @@ function Register() {
   );
 }
 
-export default Register;
+export default Login;

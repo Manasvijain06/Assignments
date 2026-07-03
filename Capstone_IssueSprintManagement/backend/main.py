@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -5,13 +6,13 @@ from app.router import auth
 from app.database.mongodb import connect_db, close_db
 
 app = FastAPI(title="Issue Sprint Management System")
-
+FRONTEND_URL = os.getenv("FRONTEND_URL")
 # -------------------------
 # CORS CONFIG
 # -------------------------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=[FRONTEND_URL],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
