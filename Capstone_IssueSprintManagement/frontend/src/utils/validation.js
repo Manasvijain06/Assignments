@@ -12,9 +12,9 @@ export const validateRegisterForm = (formData) => {
     if (!formData.email.trim()) {
         errors.email = "Email is required.";
     } else if (
-        !/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(formData.email)
+        !/^[a-zA-Z0-9._%+-]+@gmail\.com$/i.test(formData.email)
     ) {
-        errors.email = "Please enter a valid email address.";
+        errors.email = "Please enter a valid Gmail address.";
     }
 
     // Password Validation

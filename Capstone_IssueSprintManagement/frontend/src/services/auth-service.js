@@ -31,3 +31,7 @@ export const getProjects = async () => {
 export const updateProject = async (projectId, projectData) => {
     return _put(`/projects/${projectId}`, projectData);
 };
+
+export const deleteProject = async (projectId) => {
+    return _delete(`/projects/${projectId}`);
+};

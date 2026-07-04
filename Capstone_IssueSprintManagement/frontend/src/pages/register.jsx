@@ -2,6 +2,9 @@ import { useState } from "react";
 import { registerUser } from "../services/auth-Service";
 import { validateRegisterForm } from "../utils/validation";
 import { Link, useNavigate } from "react-router-dom";
+import authImage from "../assets/auth-image.png";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { toast } from "react-toastify";
 
 function Register() {
   const navigate = useNavigate();
@@ -13,8 +16,8 @@ function Register() {
   });
 
   const [errors, setErrors] = useState({});
-  const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -42,7 +45,6 @@ function Register() {
     }
 
     setErrors({});
-    setMessage("");
     setLoading(true);
 
     try {
@@ -52,85 +54,103 @@ function Register() {
       };
       const response = await registerUser(encryptedFormData);
 
-      setMessage(response.message);
+      toast.success("Registration successful!");
 
       setFormData({
         name: "",
         email: "",
         password: "",
-        role: "member",
+        role: "",
       });
-      navigate("/login");
+      setTimeout(() => {
+        navigate("/login");
+      }, 1000);
     } catch (error) {
-      setMessage(error.detail || "Registration Failed");
+      toast.error(error.detail || "Registration Failed");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="container">
-      <h2>User Registration</h2>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>Name</label>
-          <input
-            type="text"
-            name="name"
-            placeholder="Enter your name"
-            value={formData.name}
-            onChange={handleChange}
-          />
-          {errors.name && <p className="error">{errors.name}</p>}
+    <div className="auth-page">
+      <div className="auth-card">
+        <div className="auth-left">
+          <h1>
+            Issue & Sprint
+            <br />
+            Management
+          </h1>
+          <div className="auth-image">
+            <img src={authImage} alt="Authentication" />
+          </div>
+
+          <p>
+            Track issues, manage sprints and collaborate with your team in one
+            place.
+          </p>
         </div>
 
-        <div>
-          <label>Email</label>
-          <input
-            type="email"
-            name="email"
-            placeholder="Enter your email"
-            value={formData.email}
-            onChange={handleChange}
-          />
-          {errors.email && <p className="error">{errors.email}</p>}
-        </div>
+        <div className="auth-right">
+          <h2>Create Account</h2>
+          <p className="auth-subtitle">Register to get started</p>
+          <form onSubmit={handleSubmit}>
+            <label>Full Name</label>
+            <input
+              type="text"
+              name="name"
+              placeholder="Enter your name"
+              value={formData.name}
+              onChange={handleChange}
+            />
+            {errors.name && <p className="error">{errors.name}</p>}
 
-        <div>
-          <label>Password</label>
-          <input
-            type="password"
-            name="password"
-            placeholder="Enter strong password"
-            value={formData.password}
-            onChange={handleChange}
-          />
-          {errors.password && <p className="error">{errors.password}</p>}
-        </div>
+            <label>Email</label>
+            <input
+              type="text"
+              name="email"
+              placeholder="Enter your email"
+              value={formData.email}
+              onChange={handleChange}
+            />
+            {errors.email && <p className="error">{errors.email}</p>}
 
-        <div>
-          <label>Role</label>
-          <select name="role" value={formData.role} onChange={handleChange}>
-            <option value="">Select Role</option>
-            <option value="member">Member</option>
-            <option value="admin">Admin</option>
-            <option value="viewer">Viewer</option>
-          </select>
-          {errors.role && <p className="error">{errors.role}</p>}
-        </div>
+            <div className="password-container">
+              <label>Password</label>
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                placeholder="Enter strong password"
+                value={formData.password}
+                onChange={handleChange}
+              />
+              {errors.password && <p className="error">{errors.password}</p>}
+              <button
+                type="button"
+                className="toggle-password"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <FaEyeSlash /> : <FaEye />}
+              </button>
+            </div>
 
-        <button type="submit" disabled={loading}>
-          {loading ? "Registering..." : "Register"}
-        </button>
-      </form>
-      {message && (
-        <p className={message.includes("successfully") ? "success" : "error"}>
-          {message}
-        </p>
-      )}
-      <p>
-        Already have an account? <Link to="/login">Login</Link>
-      </p>
+            <label>Role</label>
+            <select name="role" value={formData.role} onChange={handleChange}>
+              <option value="">Select Role</option>
+              <option value="member">Member</option>
+              <option value="viewer">Viewer</option>
+            </select>
+            {errors.role && <p className="error">{errors.role}</p>}
+
+            <button className="auth-btn" type="submit" disabled={loading}>
+              {loading ? "Registering..." : "Register"}
+            </button>
+          </form>
+          <p className="auth-link">
+            Already have an account? <Link to="/login">Login</Link>
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
