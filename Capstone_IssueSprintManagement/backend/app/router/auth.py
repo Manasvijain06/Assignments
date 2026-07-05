@@ -1,23 +1,29 @@
 from fastapi import APIRouter, HTTPException
 
-from app.schemas.user_schema import (
-    UserRegister,
-    UserRegisterResponse,
-    UserLogin,
-    UserLoginResponse,)
 from app.database import mongodb
-from app.services.user_service import UserService
 from app.exceptions.user_exceptions import (
     UserAlreadyExistsException,
     InvalidPasswordEncodingException,
     InvalidCredentialsException,
 )
+from app.schemas.requests.auth_request import (
+    UserRegisterRequest,
+    UserLoginRequest,
+)
+from app.schemas.responses.auth_response import (
+    UserRegisterResponse,
+    UserLoginResponse
+)
+from app.services.user_service import UserService
+
 
 router = APIRouter()
 
 @router.post("/register", response_model=UserRegisterResponse)
-def register_user(user: UserRegister):
-
+def register_user(user: UserRegisterRequest):
+    """
+    Register a new user.
+    """
     if mongodb.db is None:
         raise HTTPException(
             status_code=500,
@@ -41,7 +47,9 @@ def register_user(user: UserRegister):
 
 
 @router.post("/login", response_model=UserLoginResponse)
-def login_user(user: UserLogin):
+def login_user(user: UserLoginRequest):
+    """
+    Login a user and return user details."""
 
     if mongodb.db is None:
         raise HTTPException(
@@ -55,7 +63,7 @@ def login_user(user: UserLogin):
 
         return {
             "message": "Login successful",
-            **logged_in_user
+            **logged_in_user,
         }
 
     except InvalidCredentialsException as exc:

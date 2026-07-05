@@ -11,150 +11,185 @@ from app.exceptions.user_exceptions import (
     UserNotFoundException,
     AdminAccessRequiredException,
 )
-from app.models.project_model import project_model
+from app.repositories.project_repository import ProjectRepository
+from app.repositories.user_repository import UserRepository
+from app.models.project_model import ProjectModel
 
 
 class ProjectService:
+    """
+    Business logic for project management.
+    """
 
     def __init__(self, db):
-        self.projects_collection = db["projects"]
-        self.users_collection = db["users"]
+        self.project_repository = ProjectRepository(db)
+        self.user_repository = UserRepository(db)
 
-    def _get_object_id(self, project_id: str):
+    def _get_object_id(self, object_id: str):
         try:
-            return ObjectId(project_id)
+            return ObjectId(object_id)
         except InvalidId:
             raise ProjectNotFoundException()
 
-    def _validate_admin(self, admin_email: str):
+    def _validate_admin(self, admin_id: str):
         """
         Validate that the user exists and has the Admin role.
         """
-        user = self.users_collection.find_one({"email": admin_email})
+        admin = self.user_repository.find_by_id(admin_id)
 
-        if not user:
+        if not admin:
             raise UserNotFoundException()
 
-        if user["role"] != "admin":
+        if admin["role"] != "admin":
             raise AdminAccessRequiredException()
 
-        return user
+        return admin
 
-    def create_project(self, project_data, admin_email: str):
+    def create_project(self, project_data, admin_id: str):
         """
         Create a new project.
         Only Admin users are allowed.
         """
-        admin_user = self._validate_admin(admin_email)
+        self._validate_admin(admin_id)
 
-        existing_project = self.projects_collection.find_one(
-            {"project_key": project_data.project_key}
-        )
+        existing_project = self.project_repository.find_by_key(
+            project_data.project_key)
 
         if existing_project:
             raise ProjectAlreadyExistsException()
 
-        project = project_model(
+        project = ProjectModel.build(
             name=project_data.name,
             description=project_data.description,
             project_key=project_data.project_key,
-            members=project_data.members,
-            created_by=admin_user["email"]
+            members=[],
+            created_by=admin_id
         )
 
-        result = self.projects_collection.insert_one(project)
+        result = self.project_repository.create_project(project)
         return str(result.inserted_id)
-
-    def delete_project(self, project_id: str):
-        object_id = self._get_object_id(project_id)
-
-        project = self.projects_collection.find_one({"_id": object_id})
-
-        if not project:
-            raise ProjectNotFoundException()
-
-        self.projects_collection.delete_one({"_id": object_id})
-
-    def add_member(self, project_id: str, admin_email: str, member_email: str):
-        """
-        Add a member to a project.
-        Only Admin users are allowed.
-        """
-        self._validate_admin(admin_email)
-
-        project = self.projects_collection.find_one({"_id": ObjectId(project_id)})
-
-        if not project:
-            raise ProjectNotFoundException()
-
-        if member_email in project.get("members", []):
-            raise MemberAlreadyAssignedException()
-
-        self.projects_collection.update_one(
-            {"_id": ObjectId(project_id)},
-            {"$addToSet": {"members": member_email}}
-        )
-
-    def remove_member(self, project_id: str, admin_email: str, member_email: str):
-        """
-        Delete a member to a project.
-        Only Admin users are allowed.
-        """
-        self._validate_admin(admin_email)
-
-        project = self.projects_collection.find_one({"_id": ObjectId(project_id)})
-
-        if not project:
-            raise ProjectNotFoundException()
-
-        if member_email not in project.get("members", []):
-            raise MemberNotAssignedException()
-
-        self.projects_collection.update_one(
-            {"_id": ObjectId(project_id)},
-            {"$pull": {"members": member_email}}
-        )
 
     def get_all_projects(self):
         """
         Fetch a list of all projects.
         """
-        projects = self.projects_collection.find()
+        projects = self.project_repository.get_all_projects()
 
-        return [
-        {
-            "project_id": str(project["_id"]),
-            "name": project["name"],
-            "description": project["description"],
-            "project_key": project["project_key"],
-            "members": project.get("members", []),
-            "created_by": project["created_by"],
-        }
-        for project in projects
-    ]
+        project_list = []
 
+        for project in projects:
+
+            members = []
+
+            for member_id in project.get("members", []):
+                user = self.user_repository.find_by_id(str(member_id))
+
+                if user:
+                    members.append(
+                        {
+                        "user_id": str(user["_id"]),
+                        "name": user["name"],
+                        "email": user["email"],
+                        "role": user["role"],
+                        }
+                    )
+
+            creator = self.user_repository.find_by_id(
+                str(project["created_by"])
+            )
+
+            project_list.append(
+                {
+                "project_id": str(project["_id"]),
+                "name": project["name"],
+                "description": project["description"],
+                "project_key": project["project_key"],
+                "members": members,
+                "created_by": {
+                    "user_id": str(creator["_id"]),
+                    "name": creator["name"],
+                    "email": creator["email"],
+                }
+                if creator
+                else None,
+                }
+            )
+
+        return project_list
 
     def update_project(self, project_id: str, project_data):
-        """
-        Update the project
-        """
-        try:
-            object_id = ObjectId(project_id)
-        except Exception:
-            raise ProjectNotFoundException()
+            """
+            Update the project description.
+            """
+            object_id = self._get_object_id(project_id)
 
-        project = self.projects_collection.find_one({"_id": object_id})
+            project = self.project_repository.find_by_id(object_id)
+
+            if not project:
+                raise ProjectNotFoundException()
+
+            self.project_repository.update_description(
+                object_id,
+                project_data.description
+            )
+
+    def delete_project(self, project_id: str):
+        """
+        Delete a project by its ID.
+        """
+        object_id = self._get_object_id(project_id)
+
+        project = self.project_repository.find_by_id(object_id)
 
         if not project:
             raise ProjectNotFoundException()
 
-        self.projects_collection.update_one(
-            {"_id": object_id},
-            {
-                "$set": {
-                "name": project_data.name,
-                "description": project_data.description,
-                "project_key": project_data.project_key,
-                }
-            },
+        self.project_repository.delete_project(object_id)
+
+    def add_member(self, project_id: str, admin_id: str, member_id: str):
+        """
+        Add a member to a project.
+        Only Admin users are allowed.
+        """
+        self._validate_admin(admin_id)
+
+        project_object_id = self._get_object_id(project_id)
+        member_object_id = self._get_object_id(member_id)
+
+        project = self.project_repository.find_by_id(project_object_id)
+
+        if not project:
+            raise ProjectNotFoundException()
+
+        member = self.user_repository.find_by_id(member_id)
+
+        if not member:
+            raise UserNotFoundException()
+
+        if member_object_id in project.get("members", []):
+            raise MemberAlreadyAssignedException()
+
+        self.project_repository.add_member(project_object_id, member_object_id)
+
+    def remove_member(self, project_id: str, admin_id: str, member_id: str):
+        """
+        Remove a member or viewer from a project.
+        Only admin users can remove members.
+        """
+        self._validate_admin(admin_id)
+
+        project_object_id = self._get_object_id(project_id)
+        member_object_id = self._get_object_id(member_id)
+
+        project = self.project_repository.find_by_id(project_object_id)
+
+        if not project:
+            raise ProjectNotFoundException()
+
+        if member_object_id not in project.get("members", []):
+            raise MemberNotAssignedException()
+
+        self.project_repository.remove_member(
+            project_object_id,
+            member_object_id,
         )

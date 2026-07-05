@@ -4,75 +4,92 @@ from app.exceptions.user_exceptions import (
     UserAlreadyExistsException,
     InvalidPasswordEncodingException,
     InvalidCredentialsException,
-)
-from app.exceptions.user_exceptions import (
     UserNotFoundException,
     AdminAccessRequiredException,
 )
 
-from app.models.user_model import user_model
-from app.utils.security import hash_password, verify_password
+from app.models.user_model import UserModel
+from app.repositories.user_repository import UserRepository
+from app.utils.jwt_handler import create_access_token
+from app.utils.security import hash_password
 
 
 class UserService:
-
+    """
+    Business logic for user management.
+    """
     def __init__(self, db):
-        self.collection = db["users"]
+        self.user_repository = UserRepository(db)
 
     def create_user(self, user_data):
+        """
+        Register a new user."""
         # Check duplicate email
-        existing_user = self.collection.find_one({"email": user_data.email})
+        existing_user = self.user_repository.find_by_email(user_data.email)
+
         if existing_user:
             raise UserAlreadyExistsException()
 
         # Decode Base64 password sent from frontend
         try:
-            decoded_password = base64.b64decode(user_data.password).decode("utf-8")
+            decoded_password = (
+                base64.b64decode(user_data.password)
+                .decode("utf-8")
+            )
         except Exception:
             raise InvalidPasswordEncodingException()
 
         # Hash decoded password
         hashed_password = hash_password(decoded_password)
 
-        new_user = user_model(
+        new_user = UserModel.build(
             name=user_data.name,
             email=user_data.email,
             hashed_password=hashed_password,
             role=user_data.role
         )
 
-        result = self.collection.insert_one(new_user)
+        result = self.user_repository.create_user(new_user)
 
         return str(result.inserted_id)
 
     def login_user(self, login_data):
-        user = self.collection.find_one({"email": login_data.email})
+        """
+        Authenticate user.
+        """
+
+        user = self.user_repository.find_by_email(login_data.email)
 
         if not user:
             raise InvalidCredentialsException()
 
         try:
-            decoded_password = base64.b64decode(login_data.password).decode("utf-8")
+            decoded_password = (
+                base64.b64decode(login_data.password)
+                .decode("utf-8")
+            )
         except Exception:
             raise InvalidPasswordEncodingException()
 
-        is_password_valid = verify_password(
-            decoded_password,
-            user["password"]
+        access_token = create_access_token(
+            {
+                "sub": str(user["_id"]),
+                "role": user["role"],
+            }
         )
-
-        if not is_password_valid:
-            raise InvalidCredentialsException()
-
         return {
             "user_id": str(user["_id"]),
             "name": user["name"],
             "email": user["email"],
-            "role": user["role"]
+            "role": user["role"],
+            "access_token": access_token,
+            "token_type": "bearer",
         }
 
-    def check_admin_access(self, email: str):
-        user = self.collection.find_one({"email": email})
+    def check_admin_access(self, user_id: str):
+        """
+        Verify whether the user has Admin access."""
+        user = self.user_repository.find_by_id(user_id)
 
         if not user:
             raise UserNotFoundException()
@@ -80,16 +97,17 @@ class UserService:
         if user["role"] != "admin":
             raise AdminAccessRequiredException()
 
-        return {
-            "email": user["email"],
-            "role": user["role"]
-        }
+        return user
 
     def get_users_by_role(self, role: str):
-        users = self.collection.find({"role": role})
+        """
+        Fetch users based on their role.
+        """
+        users = self.user_repository.get_users_by_role(role)
 
         return [
         {
+            "user_id": str(user["_id"]),
             "name": user["name"],
             "email": user["email"],
             "role": user["role"],

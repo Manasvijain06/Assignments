@@ -5,20 +5,8 @@ from app.exceptions.handlers import register_exception_handlers
 from app.router import auth, admin, project
 from app.database.mongodb import connect_db, close_db
 
-app = FastAPI(title="Issue Sprint Management System")
-register_exception_handlers(app)
-FRONTEND_URL = os.getenv("FRONTEND_URL")
-# -------------------------
-# CORS CONFIG
-# -------------------------
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[FRONTEND_URL],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
+app = FastAPI(title="Issue Sprint Management System")
 # -------------------------
 # LIFECYCLE EVENTS
 # -------------------------
@@ -31,6 +19,20 @@ def startup_db():
 def shutdown_db():
     close_db()
 
+register_exception_handlers(app)
+
+FRONTEND_URL = os.getenv("FRONTEND_URL","http://localhost:5173")
+# -------------------------
+# CORS CONFIG
+# -------------------------
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[FRONTEND_URL],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # -------------------------
 # ROUTES
 # -------------------------
@@ -40,4 +42,7 @@ app.include_router(project.router, prefix="/projects", tags=["Projects"])
 
 @app.get("/")
 def root():
+    """
+    Health check endpoint.
+    """
     return {"message": "Issue Sprint Management System API"}

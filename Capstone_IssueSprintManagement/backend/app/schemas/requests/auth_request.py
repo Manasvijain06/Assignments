@@ -5,15 +5,29 @@ from typing import Literal
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
-class UserRegister(BaseModel):
+class UserRegisterRequest(BaseModel):
+    """
+    Request schema for user registration."""
     name: str
     email: EmailStr
     password: str = Field(description="Base64-encoded password")
     role: Literal["admin", "member", "viewer"]
 
+    @field_validator("email")
+    def validate_email(cls, email: EmailStr):
+        """
+        Validate email format.
+        """
+        if not str(email).endswith("@gmail.com"):
+            raise ValueError("Invalid email format")
+        return email
+
     @field_validator("password")
     @classmethod
     def validate_password(cls, password: str):
+        """
+        Validate decoded password strength.
+        """
         try:
             decoded_password = base64.b64decode(password).decode("utf-8")
         except Exception:
@@ -28,28 +42,10 @@ class UserRegister(BaseModel):
 
         return password
 
+class UserLoginRequest(BaseModel):
+    """
+    User login request schema.
+    """
 
-class UserRegisterResponse(BaseModel):
-    message: str
-    user_id: str
-
-class UserLogin(BaseModel):
     email: EmailStr
     password: str = Field(description="Base64-encoded password")
-
-class UserLoginResponse(BaseModel):
-    message: str
-    user_id: str
-    name: str
-    email: EmailStr
-    role: str
-
-class AdminAccessResponse(BaseModel):
-    message: str
-    email: EmailStr
-    role: str
-
-class UserListResponse(BaseModel):
-    name: str
-    email: EmailStr
-    role: str
