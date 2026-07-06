@@ -364,8 +364,6 @@ function Project() {
 
             <div className="project-tabs">
               <span className="active-tab">Overview</span>
-              <span>Issues</span>
-              <span>Sprints</span>
             </div>
 
             <div className="project-overview-grid">

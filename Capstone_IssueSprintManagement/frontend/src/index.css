@@ -1278,3 +1278,293 @@ hr {
 .delete-confirm-btn:hover {
   background: #b91c1c;
 }
+
+
+/*------------------Issue page---------------------*/
+
+.issue-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.issue-toolbar {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr 1fr 1.4fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.issue-toolbar label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.issue-toolbar select,
+.issue-search input {
+  height: 42px;
+  margin: 6px 0 0;
+}
+
+.issue-table-card {
+  background: white;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+}
+
+.issue-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.issue-table th,
+.issue-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: left;
+  font-size: 14px;
+}
+
+.issue-table th {
+  background: #f9fafb;
+  color: #374151;
+  font-weight: 700;
+}
+
+.empty-row {
+  text-align: center;
+  color: #6b7280;
+  padding: 28px;
+}
+
+.priority-badge,
+.status-badge {
+  padding: 5px 9px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.priority-badge.low {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.priority-badge.medium {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.priority-badge.high {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.status-badge.todo {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.status-badge.in_progress {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.status-badge.done {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.pagination button {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 8px;
+  background: white;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+}
+
+.pagination .active-page {
+  background: #4f46e5;
+  color: white;
+}
+
+.status-readonly {
+  display: inline-block;
+  padding: 8px 12px;
+  background: #f3f4f6;
+  color: #6b7280;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/*--------------sub issues-------------*/
+
+.child-issue-row {
+  background: #f9fafb;
+}
+
+.child-title {
+  padding-left: 34px !important;
+}
+
+.tree-line {
+  color: #9ca3af;
+  margin-right: 8px;
+  font-weight: 700;
+}
+
+.type-badge {
+  padding: 5px 9px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.type-badge.story {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+.type-badge.task {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.type-badge.bug {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.status-readonly {
+  color: #9ca3af;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/*-----------------Issue-detail page-------------*/
+.clickable-issue-title {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.clickable-issue-title:hover {
+  color: #4f46e5;
+  text-decoration: underline;
+}
+
+.issue-detail-page {
+  display: grid;
+  grid-template-columns: 2fr 0.9fr;
+  gap: 24px;
+  margin-top: 18px;
+}
+
+.issue-detail-main,
+.issue-detail-sidebar {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.issue-detail-title-card {
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 18px;
+  margin-bottom: 20px;
+}
+
+.issue-key-badge {
+  display: inline-block;
+  background: #eef2ff;
+  color: #4f46e5;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+
+.issue-meta-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.issue-detail-section {
+  margin-top: 24px;
+}
+
+.issue-detail-section h3,
+.issue-detail-sidebar h3 {
+  margin-bottom: 12px;
+}
+
+.child-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #f9fafb;
+  margin-bottom: 10px;
+  cursor: pointer;
+}
+
+.child-detail-row:hover {
+  background: #eef2ff;
+}
+
+.child-detail-row div {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.detail-field {
+  margin-bottom: 18px;
+}
+
+.detail-field label {
+  display: block;
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.detail-field p {
+  font-weight: 600;
+  color: #111827;
+}
+
+.detail-field select {
+  width: 100%;
+  height: 42px;
+}
+
+.issue-detail-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.empty-text {
+  color: #9ca3af;
+}

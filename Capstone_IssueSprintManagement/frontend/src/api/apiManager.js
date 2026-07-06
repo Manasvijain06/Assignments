@@ -54,3 +54,15 @@ export const _delete = async (url, data = {}) => {
         };
     }
 };
+
+// PATCH
+export const _patch = async (url, data) => {
+    try {
+        const response = await api.patch(url, data);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || {
+            detail: "Something went wrong.",
+        };
+    }
+};

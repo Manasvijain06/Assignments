@@ -1,4 +1,4 @@
-import { _post, _get, _put, _delete } from "../api/apiManager";
+import { _post, _get, _put, _delete, _patch } from "../api/apiManager";
 
 export const registerUser = async (userData) => {
     return _post("auth/register", userData);
@@ -34,4 +34,21 @@ export const updateProject = async (projectId, projectData) => {
 
 export const deleteProject = async (projectId) => {
     return _delete(`/projects/${projectId}`);
+};
+
+export const createIssue = async (projectId, data) => {
+    return _post(`/projects/${projectId}/issues`, data);
+};
+
+export const getProjectIssues = async (projectId, params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    return _get(`/projects/${projectId}/issues?${query}`);
+};
+
+export const updateIssueStatus = async (issueId, data) => {
+    return _patch(`/projects/issues/${issueId}/status`, data);
+};
+
+export const getProjectStories = async (projectId) => {
+    return _get(`/projects/${projectId}/stories`);
 };
