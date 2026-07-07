@@ -1,0 +1,914 @@
+.project-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.project-section-header span {
+    color: #4f46e5;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+
+.project-card-header {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+}
+
+.project-card-header h3 {
+    margin: 0;
+    font-size: 15px;
+    color: #111827;
+}
+
+.project-card-header p {
+    margin: 5px 0 0;
+    color: #6b7280;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.project-card-info {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 18px;
+    color: #4b5563;
+    font-size: 13px;
+}
+
+.progress-line {
+    height: 6px;
+    background: #e5e7eb;
+    border-radius: 999px;
+    margin-top: 12px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: #4f46e5;
+    border-radius: 999px;
+}
+
+.progress-text {
+    text-align: right;
+    margin: 6px 0 0;
+    color: #4b5563;
+    font-size: 12px;
+}
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(17, 24, 39, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+    padding: 20px;
+}
+
+.project-modal {
+    width: 430px;
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 24px 60px rgba(17, 24, 39, 0.28);
+    animation: modalFade 0.2s ease;
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 22px;
+    color: #111827;
+}
+
+.modal-close {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    margin: 0;
+    border: none;
+    border-radius: 50%;
+    background: #f3f4f6;
+    color: #374151;
+    font-size: 22px;
+    cursor: pointer;
+}
+
+.modal-close:hover {
+    background: #e5e7eb;
+}
+
+.project-modal label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #111827;
+}
+
+.project-modal input {
+    width: 100%;
+    height: 42px;
+    margin-bottom: 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 0 12px;
+    font-size: 14px;
+}
+
+.project-modal input:focus {
+    outline: none;
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.modal-create-btn,
+.modal-cancel-btn {
+    width: auto;
+    min-width: 95px;
+    height: 40px;
+    margin: 0;
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+.modal-create-btn {
+    background: #4f46e5;
+    color: white;
+}
+
+.modal-create-btn:hover {
+    background: #4338ca;
+}
+
+.modal-cancel-btn {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.modal-cancel-btn:hover {
+    background: #e5e7eb;
+}
+
+@keyframes modalFade {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(17, 24, 39, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+
+.wide-modal {
+    width: 850px;
+    max-width: 92vw;
+    max-height: 88vh;
+    overflow-y: auto;
+}
+
+/*------------------Edit Modal------------------*/
+.edit-modal-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+}
+
+.edit-section h3 {
+    margin-top: 0;
+    margin-bottom: 18px;
+    color: #111827;
+}
+
+.project-modal {
+    width: 520px;
+    max-width: 90%;
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 28px 30px;
+    box-shadow: 0 24px 60px rgba(17, 24, 39, 0.3);
+    box-sizing: border-box;
+}
+
+.project-modal * {
+    box-sizing: border-box;
+}
+
+.project-modal form {
+    width: 100%;
+}
+
+.project-modal input,
+.project-modal select,
+.project-modal textarea {
+    width: 100%;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    box-sizing: border-box;
+    outline: none;
+    margin-bottom: 16px;
+}
+
+.project-modal input,
+.project-modal select {
+    height: 46px;
+    padding: 0 14px;
+}
+
+.project-modal textarea {
+    min-height: 100px;
+    padding: 12px 14px;
+    resize: vertical;
+}
+
+.project-modal input:focus,
+.project-modal select:focus,
+.project-modal textarea:focus {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+}
+
+.project-modal label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #111827;
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 22px;
+}
+
+.modal-header h2 {
+    margin: 0;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.modal-actions button {
+    width: auto;
+    min-width: 110px;
+    margin: 0;
+}
+
+.modal-close {
+    width: 40px;
+    height: 40px;
+    margin: 0;
+    padding: 0;
+    border-radius: 50%;
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.dashboard-project-card {
+    position: relative;
+}
+
+.project-delete-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: auto;
+    padding: 6px 10px;
+    background: #fff1f2;
+    color: #dc2626;
+    font-size: 12px;
+}
+
+.project-delete-btn:hover {
+    background: #ffe4e6;
+}
+
+
+.project-page-main {
+    flex: 1;
+    height: 100vh;
+    overflow-y: auto;
+    padding: 28px 36px;
+    box-sizing: border-box;
+    background: #f5f7fb;
+}
+
+.project-switcher {
+    max-width: 320px;
+    margin-bottom: 20px;
+}
+
+.project-switcher label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.project-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 18px 0 34px;
+    width: 100%;
+}
+
+.project-title-box {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+}
+
+.project-logo {
+    width: 77px;
+    height: 77px;
+    border-radius: 14px;
+    background: #4f46e5;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 26px;
+}
+
+
+.project-title-box h1 {
+    margin: 0;
+    font-size: 34px;
+}
+
+.project-title-box p {
+    color: #6b7280;
+}
+
+.project-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.edit-project-btn,
+.more-btn {
+    width: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: white;
+    color: #374151;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+}
+
+.edit-project-btn:hover,
+.more-btn:hover {
+    background: #f3f4f6;
+}
+
+.project-tabs {
+    display: flex;
+    gap: 42px;
+    border-bottom: 1px solid #e5e7eb;
+    margin-bottom: 34px;
+}
+
+.project-tabs span {
+    padding-bottom: 14px;
+    color: #4b5563;
+    cursor: pointer;
+}
+
+.project-tabs .active-tab {
+    color: #4f46e5;
+    font-weight: 700;
+    border-bottom: 3px solid #4f46e5;
+}
+
+.project-overview-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 1.2fr 1fr;
+    gap: 35px;
+    align-items: start;
+}
+
+.overview-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 28px;
+    overflow: hidden;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.04);
+}
+
+.overview-card h3 {
+    margin-top: 0;
+    margin-bottom: 22px;
+    font-size: 22px;
+}
+
+.overview-card .label {
+    color: #6b7280;
+    font-size: 15px;
+    margin-bottom: 8px;
+}
+
+.member-preview {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    margin-bottom: 18px;
+}
+
+.member-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: #eef2ff;
+    color: #4f46e5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+
+.member-preview strong {
+    font-size: 14px;
+}
+
+.member-preview p {
+    margin: 2px 0 0;
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 26px;
+    font-size: 18px;
+}
+
+.summary-row span {
+    color: #4b5563;
+}
+
+.summary-row strong {
+    color: #111827;
+}
+
+.modal-member-action {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 18px;
+}
+
+.modal-member-action select {
+    flex: 1;
+    height: 42px;
+    margin: 0;
+}
+
+.modal-member-action button {
+    width: auto;
+    height: 42px;
+    margin: 0;
+    padding: 0 16px;
+}
+
+.assigned-member-list {
+    max-height: 210px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.modal-member-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    padding: 10px 12px;
+    border-radius: 10px;
+    margin-bottom: 8px;
+}
+
+.modal-member-row span {
+    font-size: 14px;
+    color: #374151;
+    word-break: break-word;
+}
+
+.modal-member-row button {
+    width: 28px;
+    height: 28px;
+    margin: 0;
+    padding: 0;
+    border-radius: 50%;
+    background: #fff1f2;
+    color: #dc2626;
+    font-size: 18px;
+    line-height: 1;
+}
+
+.modal-member-row button:hover {
+    background: #ffe4e6;
+}
+
+.readonly-input {
+    background: #f3f4f6;
+    color: #6b7280;
+    cursor: not-allowed;
+}
+
+.readonly-input:focus {
+    border-color: #d1d5db;
+    box-shadow: none;
+}
+
+/*------------------Back Link------------------*/
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 28px;
+    color: #6b7280;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.back-link:hover {
+    color: #4f46e5;
+}
+
+.back-link svg {
+    font-size: 15px;
+}
+
+@media (max-width: 800px) {
+    .edit-modal-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/*------------------Delete Modal------------------*/
+.delete-modal {
+    width: 420px;
+    background: white;
+    border-radius: 14px;
+    padding: 28px;
+    text-align: center;
+}
+
+.delete-modal h2 {
+    margin-top: 0;
+    color: #111827;
+}
+
+.delete-modal p {
+    color: #4b5563;
+    margin: 12px 0;
+}
+
+.delete-warning {
+    color: #dc2626;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.delete-confirm-btn {
+    background: #dc2626;
+    color: white;
+}
+
+.delete-confirm-btn:hover {
+    background: #b91c1c;
+}
+
+
+/*------------------Issue page---------------------*/
+
+.issue-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.issue-toolbar {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr 1fr 1fr 1.4fr;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.issue-toolbar label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.issue-toolbar select,
+.issue-search input {
+    height: 42px;
+    margin: 6px 0 0;
+}
+
+.issue-table-card {
+    background: white;
+    border-radius: 14px;
+    border: 1px solid #e5e7eb;
+    overflow: hidden;
+}
+
+.issue-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.issue-table th,
+.issue-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid #e5e7eb;
+    text-align: left;
+    font-size: 14px;
+}
+
+.issue-table th {
+    background: #f9fafb;
+    color: #374151;
+    font-weight: 700;
+}
+
+.empty-row {
+    text-align: center;
+    color: #6b7280;
+    padding: 28px;
+}
+
+.priority-badge,
+.status-badge {
+    padding: 5px 9px;
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.priority-badge.low {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.priority-badge.medium {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+.priority-badge.high {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.status-badge.todo {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+.status-badge.in_progress {
+    background: #dbeafe;
+    color: #2563eb;
+}
+
+.status-badge.done {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 24px;
+}
+
+.pagination button {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border-radius: 8px;
+    background: white;
+    color: #374151;
+    border: 1px solid #e5e7eb;
+}
+
+.pagination .active-page {
+    background: #4f46e5;
+    color: white;
+}
+
+.status-readonly {
+    display: inline-block;
+    padding: 8px 12px;
+    background: #f3f4f6;
+    color: #6b7280;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/*--------------sub issues-------------*/
+
+.child-issue-row {
+    background: #f9fafb;
+}
+
+.child-title {
+    padding-left: 34px !important;
+}
+
+.tree-line {
+    color: #9ca3af;
+    margin-right: 8px;
+    font-weight: 700;
+}
+
+.type-badge {
+    padding: 5px 9px;
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.type-badge.story {
+    background: #ede9fe;
+    color: #6d28d9;
+}
+
+.type-badge.task {
+    background: #dbeafe;
+    color: #2563eb;
+}
+
+.type-badge.bug {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.status-readonly {
+    color: #9ca3af;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/*-----------------Issue-detail page-------------*/
+.clickable-issue-title {
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.clickable-issue-title:hover {
+    color: #4f46e5;
+    text-decoration: underline;
+}
+
+.issue-detail-page {
+    display: grid;
+    grid-template-columns: 2fr 0.9fr;
+    gap: 24px;
+    margin-top: 18px;
+}
+
+.issue-detail-main,
+.issue-detail-sidebar {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 24px;
+}
+
+.issue-detail-title-card {
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 18px;
+    margin-bottom: 20px;
+}
+
+.issue-key-badge {
+    display: inline-block;
+    background: #eef2ff;
+    color: #4f46e5;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 13px;
+    margin-bottom: 10px;
+}
+
+.issue-meta-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.issue-detail-section {
+    margin-top: 24px;
+}
+
+.issue-detail-section h3,
+.issue-detail-sidebar h3 {
+    margin-bottom: 12px;
+}
+
+.child-detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    background: #f9fafb;
+    margin-bottom: 10px;
+    cursor: pointer;
+}
+
+.child-detail-row:hover {
+    background: #eef2ff;
+}
+
+.child-detail-row div {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.detail-field {
+    margin-bottom: 18px;
+}
+
+.detail-field label {
+    display: block;
+    color: #6b7280;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.detail-field p {
+    font-weight: 600;
+    color: #111827;
+}
+
+.detail-field select {
+    width: 100%;
+    height: 42px;
+}
+
+.issue-detail-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 24px;
+}
+
+.empty-text {
+    color: #9ca3af;
+}

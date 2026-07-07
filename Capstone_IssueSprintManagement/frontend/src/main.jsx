@@ -4,7 +4,10 @@ import { BrowserRouter } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import App from "./App";
-import "./index.css";
+import "./styles/global.css";
+import "./styles/auth.css";
+import "./styles/layout.css";
+import "./styles/feature.css";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <BrowserRouter>
