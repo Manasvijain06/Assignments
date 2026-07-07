@@ -3,6 +3,7 @@ import Register from "./pages/Register";
 import Login from "./pages/login";
 import ProjectManagement from "./pages/Project";
 import Issue from "./pages/issue";
+import Sprint from "./pages/Sprint";
 
 function App() {
   return (
@@ -16,6 +17,8 @@ function App() {
       <Route path="/projects" element={<ProjectManagement />} />
 
       <Route path="/issues" element={<Issue />} />
+
+      <Route path="/sprints" element={<Sprint />} />
     </Routes>
   );
 }
