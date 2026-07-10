@@ -1,6 +1,7 @@
 from typing import List, Optional
 
 from pydantic import BaseModel, EmailStr
+from app.schemas.responses.auth_response import UserResponse
 
 
 class CreateProjectResponse(BaseModel):
@@ -34,16 +35,6 @@ class ProjectMemberResponse(BaseModel):
     message: str
 
 
-class ProjectUserResponse(BaseModel):
-    """
-    User details shown inside project response.
-    """
-    user_id: str
-    name: str
-    email: EmailStr
-    role: Optional[str] = None
-
-
 class ProjectCreatorResponse(BaseModel):
     """
     Project creator details.
@@ -63,5 +54,5 @@ class ProjectDetailResponse(BaseModel):
     name: str
     description: str
     project_key: str
-    members: List[ProjectUserResponse]
+    members: List[UserResponse]
     created_by: Optional[ProjectCreatorResponse]

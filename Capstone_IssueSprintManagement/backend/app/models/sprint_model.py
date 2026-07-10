@@ -1,4 +1,5 @@
 from datetime import UTC, datetime
+
 from bson import ObjectId
 
 
@@ -14,7 +15,10 @@ class SprintModel:
         created_by: str,
         start_date,
         end_date,
-    ):
+    ) -> dict:
+        """
+        Build a sprint document for MongoDB
+        """
         now = datetime.now(UTC)
 
         return {

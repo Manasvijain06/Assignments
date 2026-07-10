@@ -1,14 +1,16 @@
 from bson import ObjectId
+from datetime import datetime, UTC
 
+from app.constants.collections import ISSUES_COLLECTION, PROJECTS_COLLECTION
 
 class IssueRepository:
     """
-    Repository layer for Issue collection.
+    Repository layer for Issue-related database operations.
     """
 
     def __init__(self, db):
-        self.issues_collection = db["issues"]
-        self.projects_collection = db["projects"]
+        self.issues_collection = db[ISSUES_COLLECTION]
+        self.projects_collection = db[PROJECTS_COLLECTION]
 
     def find_project_by_id(self, project_id: ObjectId):
         return self.projects_collection.find_one({"_id": project_id})
@@ -85,12 +87,7 @@ class IssueRepository:
                 {"parent_id": {"$exists": False}},
             ]
         }
-        parent_query = {
-            "$and": [
-                query,
-                parent_filter,
-            ]
-        }
+        parent_query = {"$and": [query, parent_filter]}
 
         return list(
             self.issues_collection.find(parent_query)
@@ -98,7 +95,6 @@ class IssueRepository:
             .skip(skip)
             .limit(limit)
         )
-
 
     def count_parent_issues(self, query: dict):
         parent_filter = {
@@ -109,12 +105,7 @@ class IssueRepository:
             ],
         }
 
-        parent_query = {
-            "$and": [
-                query,
-                parent_filter,
-            ]
-        }
+        parent_query = {"$and": [query, parent_filter]}
 
         return self.issues_collection.count_documents(parent_query)
 
@@ -129,4 +120,30 @@ class IssueRepository:
                     ]
                 }
             ).sort("created_at", 1)
+        )
+
+    def add_comment(self, issue_id, comment):
+        return self.issues_collection.update_one(
+            {"_id": issue_id},
+            {"$push": {"comments": comment}},
+        )
+
+    def update_comment(self, issue_id, comment_id, text):
+        return self.issues_collection.update_one(
+            {
+                "_id": issue_id,
+                "comments.comment_id": comment_id,
+            },
+            {
+                "$set": {
+                    "comments.$.comment": text,
+                    "comments.$.updated_at": datetime.now(UTC),
+                }
+            },
+        )
+
+    def delete_comment(self, issue_id, comment_id):
+        return self.issues_collection.update_one(
+            {"_id": issue_id},
+            {"$pull": {"comments": {"comment_id": comment_id}}},
         )

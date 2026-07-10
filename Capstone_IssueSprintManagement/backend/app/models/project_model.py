@@ -1,8 +1,11 @@
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 
 from bson import ObjectId
 
 class ProjectModel:
+    """
+    Project document model.
+    """
 
     @staticmethod
     def build(

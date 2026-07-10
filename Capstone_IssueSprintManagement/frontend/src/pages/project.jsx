@@ -1,35 +1,52 @@
 import { useEffect, useState } from "react";
+
 import Sidebar from "../components/Sidebar";
 import ProjectList from "../components/projects/ProjectList";
 import ProjectDetail from "../components/projects/ProjectDetail";
 import Notification from "../components/Notification";
 import {
   getProjects,
+  addMemberToProject,
   createProject,
   updateProject,
   deleteProject,
   getUsersByRole,
-  addMemberToProject,
   removeMemberFromProject,
   getProjectIssues,
   getSprints,
 } from "../services/auth-service";
 
+const initialProjectData = {
+  name: "",
+  description: "",
+  project_key: "",
+  members: [],
+};
+
+const initialEditData = {
+  name: "",
+  description: "",
+  project_key: "",
+};
+
+const initialDashboardStats = {
+  totalIssues: 0,
+  openIssues: 0,
+  closedIssues: 0,
+  activeSprints: 0,
+};
+
 function Project() {
 
-  const [dashboardStats, setDashboardStats] = useState({
-    totalIssues: 0,
-    openIssues: 0,
-    closedIssues: 0,
-    activeSprints: 0,
-  });
-  const user = JSON.parse(localStorage.getItem("user"));
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
   const isAdmin = user?.role === "admin";
 
   const [projects, setProjects] = useState([]);
   const [selectedProject, setSelectedProject] = useState(null);
   const [availableMembers, setAvailableMembers] = useState([]);
   const [selectedMemberId, setSelectedMemberId] = useState("");
+
+  const [dashboardStats, setDashboardStats] = useState(initialDashboardStats);
 
   const [memberAdded, setMemberAdded] = useState(false);
   const [memberRemoved, setMemberRemoved] = useState(false);
@@ -41,10 +58,18 @@ function Project() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [projectToDelete, setProjectToDelete] = useState(null);
 
+  const [projectData, setProjectData] = useState(initialProjectData);
+  const [editData, setEditData] = useState(initialEditData);
+
   const [notification, setNotification] = useState({
     message: "",
     type: "",
   });
+
+  useEffect(() => {
+    loadProjects();
+    loadMembers();
+  }, []);
 
   const showNotification = (message, type = "success") => {
     setNotification({ message, type });
@@ -54,29 +79,13 @@ function Project() {
     }, 3000);
   };
 
-  const [projectData, setProjectData] = useState({
-    name: "",
-    description: "",
-    project_key: "",
-    members: [],
-  });
+  const getFilteredProjects = (projectList) => {
+    if (isAdmin) {
+      return projectList;
+    }
 
-  const [editData, setEditData] = useState({
-    name: "",
-    description: "",
-    project_key: "",
-  });
-
-  useEffect(() => {
-    loadProjects();
-    loadMembers();
-  }, []);
-
-  const getFilteredProjects = (data) => {
-    if (user?.role === "admin") return data;
-
-    return data.filter((project) =>
-      project.members.some((member) => member.user_id === user.user_id),
+    return projectList.filter((project) =>
+      (project.members || []).some((member) => member.user_id === user.user_id),
     );
   };
 
@@ -96,6 +105,7 @@ function Project() {
     try {
       const members = await getUsersByRole("member");
       const viewers = await getUsersByRole("viewer");
+
       setAvailableMembers([...members, ...viewers]);
     } catch (error) {
       showNotification(error.detail || "Failed to load users.","error");
@@ -104,10 +114,11 @@ function Project() {
 
   const refreshSelectedProject = async (projectId) => {
     const data = await getProjects();
-    const filtered = getFilteredProjects(data);
-    setProjects(filtered);
+    const filteredProjects = getFilteredProjects(data);
 
-    const updatedProject = filtered.find(
+    setProjects(filteredProjects);
+
+    const updatedProject = filteredProjects.find(
       (project) => project.project_id === projectId,
     );
 
@@ -116,8 +127,15 @@ function Project() {
     }
   };
 
-  const handleCreateChange = (e) => {
-    const { name, value } = e.target;
+  const resetEditFlags = () => {
+    setMemberAdded(false);
+    setMemberRemoved(false);
+    setDescriptionUpdated(false);
+  };
+
+  const handleCreateChange = (event) => {
+    const { name, value } = event.target;
+
     setProjectData((prev) => ({
       ...prev,
       [name]: value,
@@ -132,13 +150,7 @@ function Project() {
 
       showNotification("Project created successfully!","success");
       setShowCreateModal(false);
-
-      setProjectData({
-        name: "",
-        description: "",
-        project_key: "",
-        members: [],
-      });
+      setProjectData(initialProjectData);
 
       await loadProjects();
     } catch (error) {
@@ -153,17 +165,15 @@ function Project() {
       project_key: selectedProject.project_key,
     });
 
-    setMemberAdded(false);
-    setMemberRemoved(false);
-    setDescriptionUpdated(false);
+    resetEditFlags();
     setSelectedMemberId("");
-
     setShowEditModal(true);
   };
 
   const handleEditChange = (e) => {
     const { name, value } = e.target;
-    if (e.target.name === "description") {
+
+    if (name === "description") {
       setDescriptionUpdated(true);
     }
 
@@ -188,9 +198,7 @@ function Project() {
         showNotification("No changes made.","success");
       }
 
-      setMemberAdded(false);
-      setMemberRemoved(false);
-      setDescriptionUpdated(false);
+      resetEditFlags();
     } catch (error) {
       showNotification(error.detail || "Project update failed.","error");
     }
@@ -200,8 +208,9 @@ function Project() {
     if (!projectToDelete) return;
 
     try {
-      const response = await deleteProject(projectToDelete.project_id);
-      showNotification(response.message || "Project deleted successfully.","success");
+      await deleteProject(projectToDelete.project_id);
+
+      showNotification("Project deleted successfully.","success");
 
       setShowDeleteModal(false);
       setProjectToDelete(null);
@@ -306,6 +315,7 @@ function Project() {
             user={user}
             isAdmin={isAdmin}
             projects={projects}
+            dashboardStats={dashboardStats}
             setSelectedProject={setSelectedProject}
             setShowCreateModal={setShowCreateModal}
             showCreateModal={showCreateModal}
@@ -317,11 +327,11 @@ function Project() {
             showDeleteModal={showDeleteModal}
             projectToDelete={projectToDelete}
             handleDeleteProject={handleDeleteProject}
-            setProjectToDelete={setProjectToDelete}
           />
         ) : (
           <ProjectDetail
             isAdmin={isAdmin}
+            dashboardStats={dashboardStats}
             selectedProject={selectedProject}
             setSelectedProject={setSelectedProject}
             openEditModal={openEditModal}

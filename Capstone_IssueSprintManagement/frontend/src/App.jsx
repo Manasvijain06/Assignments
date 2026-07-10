@@ -4,6 +4,7 @@ import Login from "./pages/login";
 import ProjectManagement from "./pages/Project";
 import Issue from "./pages/issue";
 import Sprint from "./pages/Sprint";
+import Profile from "./pages/Profile";
 
 function App() {
   return (
@@ -19,6 +20,8 @@ function App() {
       <Route path="/issues" element={<Issue />} />
 
       <Route path="/sprints" element={<Sprint />} />
+
+      <Route path="/profile" element={<Profile />} />
     </Routes>
   );
 }

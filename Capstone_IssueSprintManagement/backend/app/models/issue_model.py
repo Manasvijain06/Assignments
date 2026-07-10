@@ -1,4 +1,5 @@
 from datetime import UTC, datetime
+
 from bson import ObjectId
 
 
@@ -18,8 +19,11 @@ class IssueModel:
         created_by: str,
         assignee: str,
         parent_id: str | None = None,
-    ):
-        current_time = datetime.now(UTC)
+    ) -> dict:
+        """
+        Build an issue document for MongoDB.
+        """
+        now = datetime.now(UTC)
 
         return {
             "project_id": ObjectId(project_id),
@@ -32,6 +36,6 @@ class IssueModel:
             "created_by": ObjectId(created_by),
             "assignee": ObjectId(assignee),
             "parent_id": ObjectId(parent_id) if parent_id else None,
-            "created_at": current_time,
-            "updated_at": current_time,
+            "created_at": now,
+            "updated_at": now,
         }

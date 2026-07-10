@@ -4,6 +4,9 @@ from pydantic import BaseModel, Field, model_validator
 
 
 class CreateSprintRequest(BaseModel):
+    """
+    Request schema for creating a sprint.
+    """
     name: str = Field(..., min_length=3, max_length=100)
     project_id: str
     created_by: str
@@ -19,4 +22,13 @@ class CreateSprintRequest(BaseModel):
 
 
 class SprintIssueRequest(BaseModel):
+    """
+    Request schema for adding issue in sprint.
+    """
     issue_id: str
+
+class SprintStatusRequest(BaseModel):
+    """"
+    Request schema for getting sprint status.
+    """
+    updated_by: str

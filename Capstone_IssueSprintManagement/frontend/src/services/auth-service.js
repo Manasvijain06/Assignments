@@ -1,7 +1,7 @@
-import { _post, _get, _put, _delete, _patch } from "../api/apiManager";
+import { _delete, _get, _patch, _post, _put} from "../api/apiManager";
 
 export const registerUser = async (userData) => {
-    return _post("auth/register", userData);
+    return _post("/auth/register", userData);
 };
 
 export const loginUser = async (userData) => {
@@ -57,6 +57,14 @@ export const createSprint = async (data) => {
     return _post("/sprints/", data);
 };
 
+export const startSprint = async (sprintId, data) => {
+    return _patch(`/sprints/${sprintId}/start`, data);
+};
+
+export const completeSprint = async (sprintId, data) => {
+    return _patch(`/sprints/${sprintId}/complete`, data);
+};
+
 export const addIssueToSprint = async (sprintId, data) => {
     return _post(`/sprints/${sprintId}/issues`, data);
 };
@@ -68,4 +76,24 @@ export const removeIssueFromSprint = async (sprintId, data) => {
 export const getSprints = async (params = {}) => {
     const query = new URLSearchParams(params).toString();
     return _get(`/sprints/?${query}`);
+};
+
+export const updateProfile = async (userId, data) => {
+    return _put(`/profile/${userId}`, data);
+};
+
+export const changePassword = async (userId, data) => {
+    return _put(`/profile/${userId}/password`, data);
+};
+
+export const addIssueComment = async (issueId, data) => {
+    return _post(`/projects/issues/${issueId}/comments`, data);
+};
+
+export const updateIssueComment = async (issueId, commentId, data) => {
+    return _put(`/projects/issues/${issueId}/comments/${commentId}`, data);
+};
+
+export const deleteIssueComment = async (issueId, commentId, userId) => {
+    return _delete(`/projects/issues/${issueId}/comments/${commentId}?user_id=${userId}`);
 };

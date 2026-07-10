@@ -1,14 +1,13 @@
 from bson import ObjectId
-
+from app.constants.collections import USERS_COLLECTION
 
 class UserRepository:
     """
     Repository layer for User collection.
-    Handles all database operations related to users.
     """
 
     def __init__(self, db):
-        self.collection = db["users"]
+        self.collection = db[USERS_COLLECTION]
 
     def create_user(self, user: dict):
         """
@@ -34,10 +33,8 @@ class UserRepository:
 
     def get_users_by_role(self, role: str):
         """
-        Get all users of a specific role.
+        Return all users of a specific role.
         """
         return list(
-            self.collection.find(
-                {"role": role}
-            )
+            self.collection.find({"role": role})
         )

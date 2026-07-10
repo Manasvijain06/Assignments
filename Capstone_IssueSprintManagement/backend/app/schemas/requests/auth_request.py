@@ -7,7 +7,8 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 
 class UserRegisterRequest(BaseModel):
     """
-    Request schema for user registration."""
+    Request schema for user registration.
+    """
     name: str
     email: EmailStr
     password: str = Field(description="Base64-encoded password")
@@ -30,8 +31,8 @@ class UserRegisterRequest(BaseModel):
         """
         try:
             decoded_password = base64.b64decode(password).decode("utf-8")
-        except Exception:
-            raise ValueError("Invalid password encoding")
+        except Exception as exc:
+            raise ValueError("Invalid password encoding") from exc
 
         pattern = r"^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*]).{6,}$"
 

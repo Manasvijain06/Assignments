@@ -1,26 +1,20 @@
-class UserAlreadyExistsException(Exception):
-    def __init__(self, message="Email already registered"):
-        self.message = message
-        super().__init__(self.message)
+from app.exceptions.base_exception import BaseAppException
+
+class UserAlreadyExistsException(BaseAppException):
+    default_message = "Email already registered"
 
 
-class InvalidPasswordEncodingException(Exception):
-    def __init__(self, message="Invalid password encoding"):
-        self.message = message
-        super().__init__(self.message)
-
-class InvalidCredentialsException(Exception):
-    def __init__(self, message="Invalid email or password"):
-        self.message = message
-        super().__init__(self.message)
-
-class UserNotFoundException(Exception):
-    def __init__(self, message="User not found"):
-        self.message = message
-        super().__init__(self.message)
+class InvalidPasswordEncodingException(BaseAppException):
+    default_message = "Invalid password encoding"
 
 
-class AdminAccessRequiredException(Exception):
-    def __init__(self, message="Admin access required"):
-        self.message = message
-        super().__init__(self.message)
+class InvalidCredentialsException(BaseAppException):
+    default_message = "Invalid email or password"
+
+
+class UserNotFoundException(BaseAppException):
+    default_message = "User not found"
+
+
+class AdminAccessRequiredException(BaseAppException):
+    default_message = "Admin access required"

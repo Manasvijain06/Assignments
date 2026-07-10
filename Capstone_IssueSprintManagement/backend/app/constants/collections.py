@@ -1,0 +1,4 @@
+USERS_COLLECTION = "users"
+PROJECTS_COLLECTION = "projects"
+ISSUES_COLLECTION = "issues"
+SPRINTS_COLLECTION = "sprints"

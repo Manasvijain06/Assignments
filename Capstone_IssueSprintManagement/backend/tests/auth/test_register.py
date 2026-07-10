@@ -3,10 +3,15 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 from main import app
+from app.dependencies.database import get_db
 from app.exceptions.user_exceptions import UserAlreadyExistsException
 
 client = TestClient(app)
 
+def override_get_db():
+    return {}
+
+app.dependency_overrides[get_db] = override_get_db
 
 def encode_password(password: str) -> str:
     return base64.b64encode(password.encode()).decode()
@@ -26,7 +31,6 @@ def test_register_invalid_email():
     assert response.status_code == 422
 
 
-@patch("app.router.auth.mongodb.db", new={})
 @patch("app.router.auth.UserService")
 def test_register_success(mock_user_service):
     mock_user_service.return_value.create_user.return_value = "mock_user_id"
@@ -35,7 +39,7 @@ def test_register_success(mock_user_service):
         "/auth/register",
         json={
             "name": "Manasvi",
-            "email": "manasvi@example.com",
+            "email": "manasvi@gmail.com",
             "password": encode_password("Password123!"),
             "role": "member",
         },
@@ -46,7 +50,6 @@ def test_register_success(mock_user_service):
     assert response.json()["user_id"] == "mock_user_id"
 
 
-@patch("app.router.auth.mongodb.db", new={})
 @patch("app.router.auth.UserService")
 def test_register_duplicate_email(mock_user_service):
     mock_user_service.return_value.create_user.side_effect = (
@@ -57,7 +60,7 @@ def test_register_duplicate_email(mock_user_service):
         "/auth/register",
         json={
             "name": "Manasvi",
-            "email": "manasvi@example.com",
+            "email": "manasvi@gmail.com",
             "password": encode_password("Password123!"),
             "role": "member",
         },

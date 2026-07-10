@@ -1,4 +1,5 @@
 import math
+import uuid
 from datetime import UTC, datetime
 
 from bson import ObjectId
@@ -9,6 +10,8 @@ from app.exceptions.issue_exceptions import (
     InvalidIssueStatusTransitionException,
     IssueNotFoundException,
     InvalidParentIssueException,
+    CommentNotFoundException,
+    CommentPermissionDeniedException,
 )
 from app.exceptions.project_exceptions import ProjectNotFoundException
 from app.exceptions.user_exceptions import UserNotFoundException
@@ -18,25 +21,36 @@ from app.repositories.user_repository import UserRepository
 
 
 class IssueService:
-    """Business logic layer for issue management."""
+    """
+    Business logic layer for issue management.
+    """
 
     def __init__(self, db):
         self.issue_repository = IssueRepository(db)
         self.user_repository = UserRepository(db)
 
     def _get_object_id(self, object_id: str):
+        """
+        Convert issue id to ObjectId.
+        """
         try:
             return ObjectId(object_id)
-        except InvalidId:
-            raise IssueNotFoundException()
+        except InvalidId as exc:
+            raise IssueNotFoundException() from exc
 
     def _get_project_object_id(self, project_id: str):
+        """
+        Convert project id to ObjectId.
+        """
         try:
             return ObjectId(project_id)
-        except InvalidId:
-            raise ProjectNotFoundException()
+        except InvalidId as exc:
+            raise ProjectNotFoundException() from exc
 
     def _get_user_details(self, user_id):
+        """
+        Return formatted user details
+        """
         user = self.user_repository.find_by_id(str(user_id))
 
         if not user:
@@ -50,8 +64,10 @@ class IssueService:
         }
 
     def create_issue(self, project_id: str, issue_data):
+        """
+        Create a new issue.
+        """
         project_object_id = self._get_project_object_id(project_id)
-
         project = self.issue_repository.find_project_by_id(project_object_id)
 
         if not project:
@@ -63,16 +79,16 @@ class IssueService:
         if not creator or not assignee:
             raise UserNotFoundException()
 
-        issue_count = self.issue_repository.count_project_issues(project_object_id)
-        issue_key = f"{project['project_key']}-{issue_count + 1}"
+        if issue_data.type == "story" and issue_data.parent_id:
+            raise InvalidParentIssueException("Story cannot have a parent issue")
 
         parent_id = self._validate_parent_issue(
             issue_data.parent_id,
             project_object_id,
         )
 
-        if issue_data.type == "story" and issue_data.parent_id:
-            raise InvalidParentIssueException("Story cannot have a parent issue")
+        issue_count = self.issue_repository.count_project_issues(project_object_id)
+        issue_key = f"{project['project_key']}-{issue_count + 1}"
 
         issue = IssueModel.build(
             project_id=project_id,
@@ -91,6 +107,9 @@ class IssueService:
         return str(result.inserted_id)
 
     def _format_issue(self, issue):
+        """
+        Format issue response.
+        """
         parent_story = None
 
         if issue.get("parent_id"):
@@ -116,6 +135,7 @@ class IssueService:
             "parent_story": parent_story,
             "assignee": self._get_user_details(issue.get("assignee")),
             "created_by": self._get_user_details(issue.get("created_by")),
+            "comments": issue.get("comments", []),
             "children": [
                 self._format_child_issue(child)
                 for child in children
@@ -123,6 +143,9 @@ class IssueService:
         }
 
     def _format_child_issue(self, issue):
+        """"
+        Format child issue response.
+        """
         parent_story = None
 
         if issue.get("parent_id"):
@@ -145,6 +168,7 @@ class IssueService:
             "parent_story": parent_story,
             "assignee": self._get_user_details(issue.get("assignee")),
             "created_by": self._get_user_details(issue.get("created_by")),
+            "comments": issue.get("comments", []),
             "children": [],
         }
 
@@ -158,8 +182,10 @@ class IssueService:
         assignee: str | None,
         search: str | None,
     ):
+        """
+        Fetch project issues with pagination and filters.
+        """
         project_object_id = self._get_project_object_id(project_id)
-
         project = self.issue_repository.find_project_by_id(project_object_id)
 
         if not project:
@@ -189,6 +215,7 @@ class IssueService:
             {"status": {"$regex": search, "$options": "i"}},
             {"priority": {"$regex": search, "$options": "i"}},
             {"type": {"$regex": search, "$options": "i"}},
+            {"_id": {"$in": parent_ids}},
     ]
 
         total = self.issue_repository.count_parent_issues(query)
@@ -212,8 +239,10 @@ class IssueService:
 
 
     def update_issue_status(self, issue_id: str, status_data):
+        """
+        Update issue status.
+        """
         issue_object_id = self._get_object_id(issue_id)
-
         issue = self.issue_repository.find_by_id(issue_object_id)
 
         if not issue:
@@ -250,6 +279,9 @@ class IssueService:
         )
 
     def _validate_parent_issue(self, parent_id: str | None, project_object_id):
+        """
+        Validate parent issue.
+        """
         if not parent_id:
             return None
 
@@ -274,8 +306,10 @@ class IssueService:
         return parent_id
 
     def get_project_stories(self, project_id: str):
+        """
+        Fetch story issues of a project.
+        """
         project_object_id = self._get_project_object_id(project_id)
-
         project = self.issue_repository.find_project_by_id(project_object_id)
 
         if not project:
@@ -291,3 +325,99 @@ class IssueService:
             }
             for story in stories
     ]
+
+    def add_comment(self, issue_id, request):
+        """
+        Add comments to issues.
+        """
+        issue_object_id = self._get_object_id(issue_id)
+        issue = self.issue_repository.find_by_id(issue_object_id)
+
+        if not issue:
+            raise IssueNotFoundException()
+
+        comment_user = self.user_repository.find_by_id(request.user_id)
+
+        if not comment_user:
+            raise UserNotFoundException()
+
+        now = datetime.now(UTC)
+
+        comment = {
+            "comment_id": str(uuid.uuid4()),
+            "user": {
+                "user_id": str(comment_user["_id"]),
+                "name": comment_user["name"],
+                "email": comment_user["email"],
+                "role": comment_user["role"],
+            },
+            "comment": request.comment,
+            "created_at": now,
+            "updated_at": now,
+        }
+
+        self.issue_repository.add_comment(
+            issue_object_id,
+            comment,
+        )
+
+    def update_comment(self, issue_id, comment_id, request):
+        """
+        Update user's own comment.
+        """
+        issue_object_id = self._get_object_id(issue_id)
+        issue = self.issue_repository.find_by_id(issue_object_id)
+
+        if not issue:
+            raise IssueNotFoundException()
+
+        comment = next(
+            (
+                comment for comment in issue.get("comments", [])
+                if comment["comment_id"] == comment_id
+            ),
+            None,
+        )
+
+        if not comment:
+            raise CommentNotFoundException()
+
+        if comment["user"]["user_id"] != request.user_id:
+            raise CommentPermissionDeniedException()
+
+        self.issue_repository.update_comment(
+            issue_object_id,
+            comment_id,
+            request.comment,
+        )
+
+    def delete_comment(self, issue_id, comment_id, user_id):
+        """
+        Delete user's own comment.
+        """
+        issue_object_id = self._get_object_id(issue_id)
+        issue = self.issue_repository.find_by_id(issue_object_id)
+
+
+        if not issue:
+            raise IssueNotFoundException()
+
+        comment = next(
+            (
+                comment for comment in issue.get("comments", [])
+                if comment["comment_id"] == comment_id
+            ),
+            None,
+        )
+
+        if not comment:
+            raise CommentNotFoundException()
+
+        if comment["user"]["user_id"] != user_id:
+            raise CommentPermissionDeniedException()
+
+        self.issue_repository.delete_comment(
+            issue_object_id,
+            comment_id,
+        )
+

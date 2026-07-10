@@ -1,23 +1,14 @@
-from fastapi import APIRouter, HTTPException, Query
-
-from app.database import mongodb
-
 from typing import List
-from app.exceptions.project_exceptions import (
-    MemberAlreadyAssignedException,
-    MemberNotAssignedException,
-    ProjectAlreadyExistsException,
-    ProjectNotFoundException,
-)
-from app.exceptions.user_exceptions import (
-    AdminAccessRequiredException,
-    UserNotFoundException,
-)
+
+from fastapi import APIRouter, Depends, Query
+
+from app.dependencies.database import get_db
+
 from app.schemas.requests.project_request import (
     AddMemberRequest,
+    CreateProjectRequest,
     RemoveMemberRequest,
     UpdateProjectRequest,
-    CreateProjectRequest,
 )
 from app.schemas.responses.project_response import (
     CreateProjectResponse,
@@ -32,168 +23,90 @@ router = APIRouter()
 
 
 @router.post("/", response_model=CreateProjectResponse)
-def create_project(project: CreateProjectRequest, admin_id: str = Query(...)):
+def create_project(project: CreateProjectRequest, admin_id: str = Query(...), db=Depends(get_db)):
+    """
+    Create a new project.
+    """
 
-    if mongodb.db is None:
-        raise HTTPException(
-            status_code=500,
-            detail="Database connection not initialized"
-        )
+    project_service = ProjectService(db)
+    project_id = project_service.create_project(project, admin_id)
 
-    try:
-        project_service = ProjectService(mongodb.db)
-
-        project_id = project_service.create_project(
-            project,
-            admin_id,
-        )
-
-        return {
-            "message": "Project created successfully.",
-            "project_id": project_id,
-        }
-
-    except ProjectAlreadyExistsException as exc:
-        raise HTTPException(409, exc.message)
-
-    except UserNotFoundException as exc:
-        raise HTTPException(404, exc.message)
-
-    except AdminAccessRequiredException as exc:
-        raise HTTPException(403, exc.message)
+    return {
+        "message": "Project created successfully.",
+        "project_id": project_id,
+    }
 
 
 @router.get("/", response_model=List[ProjectDetailResponse])
-def get_all_projects():
+def get_all_projects(db=Depends(get_db)):
     """
     Fetch all projects.
     """
-    if mongodb.db is None:
-        raise HTTPException(
-            status_code=500,
-            detail="Database connection not initialized",
-        )
 
-    project_service = ProjectService(mongodb.db)
+    project_service = ProjectService(db)
+
     return project_service.get_all_projects()
 
 
-@router.put("/{project_id}", response_model=UpdateProjectResponse,)
-def update_project(project_id: str, project: UpdateProjectRequest):
+@router.put("/{project_id}", response_model=UpdateProjectResponse)
+def update_project(project_id: str, project: UpdateProjectRequest, db=Depends(get_db)):
     """
     Update project description.
     """
-    if mongodb.db is None:
-        raise HTTPException(
-            status_code=500,
-            detail="Database connection not initialized"
-        )
+    project_service = ProjectService(db)
 
-    try:
-        project_service = ProjectService(mongodb.db)
+    project_service.update_project(project_id, project)
 
-        project_service.update_project(
-            project_id,
-            project,
-        )
-
-        return {
-            "message": "Project updated successfully."
-        }
-
-    except ProjectNotFoundException as exc:
-        raise HTTPException(404, exc.message)
+    return {
+        "message": "Project updated successfully."
+    }
 
 
 @router.delete("/{project_id}", response_model=DeleteProjectResponse)
-def delete_project(project_id: str):
-    if mongodb.db is None:
-        raise HTTPException(
-            status_code=500,
-            detail="Database connection not initialized"
-        )
+def delete_project(project_id: str, db=Depends(get_db)):
+    """
+    Delete a project.
+    """
 
-    try:
-        project_service = ProjectService(mongodb.db)
+    project_service = ProjectService(db)
+    project_service.delete_project(project_id)
 
-        project_service.delete_project(project_id)
-
-        return {
-            "message": "Project deleted successfully."
-        }
-
-    except ProjectNotFoundException as exc:
-        raise HTTPException(404, exc.message)
+    return {
+        "message": "Project deleted successfully."
+    }
 
 @router.post("/{project_id}/members", response_model=ProjectMemberResponse)
-def add_member(project_id: str, request: AddMemberRequest):
+def add_member(project_id: str, request: AddMemberRequest, db=Depends(get_db)):
     """
     Add a member to a project.
     """
 
-    if mongodb.db is None:
-        raise HTTPException(
-            status_code=500,
-            detail="Database connection not initialized"
-        )
+    project_service = ProjectService(db)
 
+    project_service.add_member(
+        project_id,
+        request.admin_id,
+        request.member_id,
+    )
 
-    try:
-        project_service = ProjectService(mongodb.db)
+    return {
+        "message": "Member added successfully."
+    }
 
-        project_service.add_member(
-            project_id,
-            request.admin_id,
-            request.member_id,
-        )
-
-        return {
-            "message": "Member added successfully."
-        }
-
-    except (
-        ProjectNotFoundException,
-        UserNotFoundException,
-    ) as exc:
-        raise HTTPException(404, exc.message)
-
-    except MemberAlreadyAssignedException as exc:
-        raise HTTPException(409, exc.message)
-
-    except AdminAccessRequiredException as exc:
-        raise HTTPException(403, exc.message)
 
 @router.delete("/{project_id}/members", response_model=ProjectMemberResponse)
-def remove_member(project_id: str, request: RemoveMemberRequest):
+def remove_member(project_id: str, request: RemoveMemberRequest, db=Depends(get_db)):
+    """
+    Remove a member from a project.
+    """
+    project_service = ProjectService(db)
 
-    if mongodb.db is None:
-        raise HTTPException(
-            status_code=500,
-            detail="Database connection not initialized"
-        )
+    project_service.remove_member(
+        project_id,
+        request.admin_id,
+        request.member_id,
+    )
 
-
-    try:
-        project_service = ProjectService(mongodb.db)
-
-        project_service.remove_member(
-            project_id,
-            request.admin_id,
-            request.member_id,
-        )
-
-        return {
-            "message": "Member removed successfully."
-        }
-
-    except (
-        ProjectNotFoundException,
-        UserNotFoundException,
-    ) as exc:
-        raise HTTPException(404, exc.message)
-
-    except MemberNotAssignedException as exc:
-        raise HTTPException(409, exc.message)
-
-    except AdminAccessRequiredException as exc:
-        raise HTTPException(403, exc.message)
+    return {
+        "message": "Member removed successfully."
+    }

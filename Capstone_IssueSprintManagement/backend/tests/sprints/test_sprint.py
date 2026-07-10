@@ -2,13 +2,20 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-from main import app
+from app.dependencies.database import get_db
 from app.exceptions.sprint_exceptions import DoneIssueCannotBeAddedException
+from main import app
 
 client = TestClient(app)
 
 
-@patch("app.router.sprint.mongodb.db", new={})
+def override_get_db():
+    return {}
+
+
+app.dependency_overrides[get_db] = override_get_db
+
+
 @patch("app.router.sprint.SprintService")
 def test_create_sprint_success(mock_sprint_service):
     mock_sprint_service.return_value.create_sprint.return_value = "mock_sprint_id"
@@ -19,7 +26,7 @@ def test_create_sprint_success(mock_sprint_service):
             "name": "Sprint 1",
             "project_id": "507f1f77bcf86cd799439011",
             "created_by": "507f1f77bcf86cd799439012",
-            "start_date": "2026-07-06",
+            "start_date": "2026-07-10",
             "end_date": "2026-07-15",
         },
     )
@@ -29,9 +36,10 @@ def test_create_sprint_success(mock_sprint_service):
     assert response.json()["sprint_id"] == "mock_sprint_id"
 
 
-@patch("app.router.sprint.mongodb.db", new={})
 @patch("app.router.sprint.SprintService")
 def test_add_issue_to_sprint_success(mock_sprint_service):
+    mock_sprint_service.return_value.add_issue_to_sprint.return_value = None
+
     response = client.post(
         "/sprints/507f1f77bcf86cd799439011/issues",
         json={
@@ -43,7 +51,6 @@ def test_add_issue_to_sprint_success(mock_sprint_service):
     assert response.json()["message"] == "Issue added to sprint successfully."
 
 
-@patch("app.router.sprint.mongodb.db", new={})
 @patch("app.router.sprint.SprintService")
 def test_prevent_adding_done_issue(mock_sprint_service):
     mock_sprint_service.return_value.add_issue_to_sprint.side_effect = (

@@ -2,13 +2,20 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-from main import app
+from app.dependencies.database import get_db
 from app.exceptions.project_exceptions import ProjectNotFoundException
+from main import app
 
 client = TestClient(app)
 
 
-@patch("app.router.issue.mongodb.db", new={})
+def override_get_db():
+    return {}
+
+
+app.dependency_overrides[get_db] = override_get_db
+
+
 @patch("app.router.issue.IssueService")
 def test_issue_creation_success(mock_issue_service):
     mock_issue_service.return_value.create_issue.return_value = "mock_issue_id"
@@ -31,7 +38,6 @@ def test_issue_creation_success(mock_issue_service):
     assert response.json()["issue_id"] == "mock_issue_id"
 
 
-@patch("app.router.issue.mongodb.db", new={})
 @patch("app.router.issue.IssueService")
 def test_create_issue_invalid_project_id(mock_issue_service):
     mock_issue_service.return_value.create_issue.side_effect = (
@@ -59,7 +65,7 @@ def test_create_issue_missing_fields():
     response = client.post(
         "/projects/507f1f77bcf86cd799439011/issues",
         json={
-            "title": "Login bug"
+            "title": "Login bug",
         },
     )
 
