@@ -9,7 +9,6 @@ import {
     createIssue,
     getProjectIssues,
     getProjects,
-    getUsersByRole,
     updateIssueStatus,
     getProjectStories,
     addIssueComment,
@@ -54,6 +53,11 @@ function Issue() {
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [issueData, setIssueData] = useState(initialIssueData);
 
+    const [errors, setErrors] = useState({
+      title: "",
+      description: "",
+    });
+
     const [commentText, setCommentText] = useState("");
     const [editingCommentId, setEditingCommentId] = useState(null);
     const [editCommentText, setEditCommentText] = useState("");
@@ -65,7 +69,6 @@ function Issue() {
 
     useEffect(() => {
       loadProjects();
-      loadUsers();
     }, []);
 
     useEffect(() => {
@@ -91,49 +94,62 @@ function Issue() {
 
 
     const loadProjects = async () => {
-        try {
-            const data = await getProjects();
-            const visibleProjects =
-              user.role === "admin"
-                ? data
-                : data.filter((project) =>
-                    project.members?.some(
-                      (member) => member.user_id === user.user_id,
-                    ),
-                  );
+      try {
+        const response = await getProjects({
+          page: 1,
+          limit: 50,
+        });
 
-            setProjects(visibleProjects);
+        const projectItems = response.items || [];
 
-            const savedProjectId = localStorage.getItem("selectedProjectId");
-            const projectExists = data.some(
-              (project) => project.project_id === savedProjectId,
-            );
+        const visibleProjects =
+          user.role === "admin"
+            ? projectItems
+            : projectItems.filter((project) =>
+                (project.members || []).some(
+                  (member) => member.user_id === user.user_id,
+                ),
+              );
 
-            if (projectExists) {
-              setSelectedProjectId(savedProjectId);
-              loadStories(savedProjectId);
-            } else if (visibleProjects.length > 0) {
-              const firstProjectId = visibleProjects[0].project_id;
+        setProjects(visibleProjects);
 
-              setSelectedProjectId(firstProjectId);
-              localStorage.setItem("selectedProjectId", firstProjectId);
-              loadStories(firstProjectId);
-            }
-        } catch (error) {
-            showNotification(error.detail || "Failed to load projects.", "error");
+        const savedProjectId = localStorage.getItem("selectedProjectId");
+
+        const projectExists = visibleProjects.some(
+          (project) => project.project_id === savedProjectId,
+        );
+
+        if (projectExists) {
+          setSelectedProjectId(savedProjectId);
+          await loadStories(savedProjectId);
+        } else if (visibleProjects.length > 0) {
+          const firstProjectId = visibleProjects[0].project_id;
+
+          setSelectedProjectId(firstProjectId);
+          localStorage.setItem("selectedProjectId", firstProjectId);
+
+          await loadStories(firstProjectId);
+        } else {
+          setSelectedProjectId("");
+          setIssues([]);
+          setStories([]);
+          localStorage.removeItem("selectedProjectId");
         }
+      } catch (error) {
+        showNotification(error.detail || "Failed to load projects.", "error");
+      }
     };
+    useEffect(() => {
+      const selectedProject = projects.find(
+        (project) => project.project_id === selectedProjectId,
+      );
 
-    const loadUsers = async () => {
-        try {
-            const membersData = await getUsersByRole("member");
-            const viewersData = await getUsersByRole("viewer");
+      const projectMembers = (selectedProject?.members || []).filter(
+        (member) => member.role === "member",
+      );
 
-            setMembers([...membersData, ...viewersData]);
-        } catch (error) {
-            showNotification(error.detail || "Failed to load users.", "error");
-        }
-    };
+      setMembers(projectMembers);
+    }, [projects, selectedProjectId]);
 
     const loadIssues = async () => {
         try {
@@ -158,8 +174,48 @@ function Issue() {
         setPage(1);
     };
 
+    const handleCloseCreateModal = () => {
+      setShowCreateModal(false);
+
+      setErrors({
+        title: "",
+        description: "",
+      });
+
+      setIssueData(initialIssueData);
+    };
+
     const handleCreateIssue = async (e) => {
         e.preventDefault();
+
+         const newErrors = {
+           title: "",
+           description: "",
+           assignee: "",
+         };
+
+         if (!issueData.title.trim()) {
+           newErrors.title = "Title is required.";
+         }
+
+         if (!issueData.description.trim()) {
+           newErrors.description = "Description is required.";
+         }
+
+         if (!issueData.assignee) {
+           newErrors.assignee = "Assignee is required.";
+         }
+
+          if (newErrors.title || newErrors.description || newErrors.assignee) {
+            setErrors(newErrors);
+            return;
+          }
+
+          setErrors({
+            title: "",
+            description: "",
+            assignee: "",
+          });
 
         try {
             await createIssue(selectedProjectId, {
@@ -210,7 +266,7 @@ function Issue() {
 
     const handleAddComment = async () => {
         if (!commentText.trim()){
-            showNotification("Comment cannot be empty,","error")
+            showNotification("Comment cannot be empty.","error")
             return;
         }
 
@@ -268,11 +324,14 @@ function Issue() {
 
 
     const canUpdateStatus = (issue) => {
-        if (!user) return false;
+      if (!user) return false;
 
-        return user.role === "admin" || issue.assignee?.user_id === user.user_id;
+      return (
+        user.role === "admin" ||
+        (user.role === "member" && issue.assignee?.user_id === user.user_id)
+      );
     };
-
+    
     const renderIssueRow = (issue, isChild = false) => (
         <tr
             key={issue.issue_id}
@@ -336,58 +395,62 @@ function Issue() {
     };
 
     return (
-        <div className="dashboard-layout">
-            <Sidebar />
+      <div className="dashboard-layout">
+        <Sidebar />
 
-            <main className="dashboard-main">
-                {!selectedIssue ? (
-                    <IssueList
-                        projects={projects}
-                        selectedProjectId={selectedProjectId}
-                        setSelectedProjectId={setSelectedProjectId}
-                        setPage={setPage}
-                        setIssues={setIssues}
-                        loadStories={loadStories}
-                        filters={filters}
-                        setFilters={setFilters}
-                        members={members}
-                        handleSearch={handleSearch}
-                        issues={issues}
-                        renderIssueRow={renderIssueRow}
-                        page={page}
-                        totalPages={totalPages}
-                        showCreateModal={showCreateModal}
-                        setShowCreateModal={setShowCreateModal}
-                        issueData={issueData}
-                        setIssueData={setIssueData}
-                        handleCreateIssue={handleCreateIssue}
-                        stories={stories}
-                    />
-                ) : (
-                    <IssueDetail
-                        selectedIssue={selectedIssue}
-                        setSelectedIssue={setSelectedIssue}
-                        canUpdateStatus={canUpdateStatus}
-                        handleDetailStatusChange={handleDetailStatusChange}
-                        user={user}
-                        commentText={commentText}
-                        setCommentText={setCommentText}
-                        editingCommentId={editingCommentId}
-                        editCommentText={editCommentText}
-                        setEditCommentText={setEditCommentText}
-                        handleAddComment={handleAddComment}
-                        handleEditComment={handleEditComment}
-                        handleUpdateComment={handleUpdateComment}
-                        handleDeleteComment={handleDeleteComment}
-                    />
-                )}
-            </main>
-            <Notification
-                message={notification.message}
-                type={notification.type}
-                onClose={() => setNotification({ message: "", type: "" })}
+        <main className="dashboard-main">
+          {!selectedIssue ? (
+            <IssueList
+              user={user}
+              projects={projects}
+              selectedProjectId={selectedProjectId}
+              setSelectedProjectId={setSelectedProjectId}
+              setPage={setPage}
+              setIssues={setIssues}
+              loadStories={loadStories}
+              filters={filters}
+              setFilters={setFilters}
+              members={members}
+              handleSearch={handleSearch}
+              issues={issues}
+              renderIssueRow={renderIssueRow}
+              page={page}
+              totalPages={totalPages}
+              showCreateModal={showCreateModal}
+              setShowCreateModal={setShowCreateModal}
+              issueData={issueData}
+              setIssueData={setIssueData}
+              handleCreateIssue={handleCreateIssue}
+              stories={stories}
+              errors={errors}
+              setErrors={setErrors}
+              handleCloseCreateModal={handleCloseCreateModal}
             />
-        </div>
+          ) : (
+            <IssueDetail
+              selectedIssue={selectedIssue}
+              setSelectedIssue={setSelectedIssue}
+              canUpdateStatus={canUpdateStatus}
+              handleDetailStatusChange={handleDetailStatusChange}
+              user={user}
+              commentText={commentText}
+              setCommentText={setCommentText}
+              editingCommentId={editingCommentId}
+              editCommentText={editCommentText}
+              setEditCommentText={setEditCommentText}
+              handleAddComment={handleAddComment}
+              handleEditComment={handleEditComment}
+              handleUpdateComment={handleUpdateComment}
+              handleDeleteComment={handleDeleteComment}
+            />
+          )}
+        </main>
+        <Notification
+          message={notification.message}
+          type={notification.type}
+          onClose={() => setNotification({ message: "", type: "" })}
+        />
+      </div>
     );
 }
 

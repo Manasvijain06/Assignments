@@ -11,7 +11,7 @@ class UserRegisterRequest(BaseModel):
     """
     name: str
     email: EmailStr
-    password: str = Field(description="Base64-encoded password")
+    password: str
     role: Literal["admin", "member", "viewer"]
 
     @field_validator("email")
@@ -20,7 +20,7 @@ class UserRegisterRequest(BaseModel):
         Validate email format.
         """
         if not str(email).endswith("@gmail.com"):
-            raise ValueError("Invalid email format")
+            raise ValueError("Please enter a valid Gmail address.")
         return email
 
     @field_validator("password")
@@ -30,15 +30,21 @@ class UserRegisterRequest(BaseModel):
         Validate decoded password strength.
         """
         try:
-            decoded_password = base64.b64decode(password).decode("utf-8")
+            decoded_password = base64.b64decode(
+                password,
+                validate=True,
+            ).decode("utf-8")
         except Exception as exc:
-            raise ValueError("Invalid password encoding") from exc
+            raise ValueError(
+                "Password must be valid Base64 encoded text."
+            ) from exc
 
         pattern = r"^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*]).{6,}$"
 
         if not re.match(pattern, decoded_password):
             raise ValueError(
-                "Password must be at least 6 characters and include uppercase, lowercase, digit, and special character."
+                "Password must be at least 6 characters and include"
+                "uppercase, lowercase, digit, and special character."
             )
 
         return password

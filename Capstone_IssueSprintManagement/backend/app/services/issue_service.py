@@ -238,7 +238,7 @@ class IssueService:
         }
 
 
-    def update_issue_status(self, issue_id: str, status_data):
+    def update_issue_status(self, issue_id: str, status_data, current_user: dict):
         """
         Update issue status.
         """
@@ -248,14 +248,14 @@ class IssueService:
         if not issue:
             raise IssueNotFoundException()
 
-        updated_by_user = self.user_repository.find_by_id(status_data.updated_by)
+        current_user_id = str(current_user["_id"])
+        current_user_role = current_user["role"]
 
-        if not updated_by_user:
-            raise UserNotFoundException()
+        assignee_id = issue.get("assignee")
 
         if (
-            updated_by_user["role"] != "admin"
-            and str(issue["assignee"]) != status_data.updated_by
+            current_user_role["role"] != "admin"
+            and str(assignee_id) != current_user_id
         ):
             raise AssigneeRequiredException()
 

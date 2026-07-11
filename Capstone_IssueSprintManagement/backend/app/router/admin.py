@@ -2,6 +2,7 @@ from typing import List
 
 from fastapi import APIRouter, Depends, Query
 
+from app.dependencies.authorization import RoleChecker
 from app.dependencies.database import get_db
 
 from app.schemas.responses.auth_response import (
@@ -11,16 +12,16 @@ from app.schemas.responses.auth_response import (
 from app.services.user_service import UserService
 
 router = APIRouter()
-
+admin_required = RoleChecker(["admin"])
 
 @router.get("/admin-only", response_model=AdminAccessResponse)
-def admin_only_endpoint(user_id: str = Query(...), db=Depends(get_db)):
+def admin_only_endpoint( current_user: dict = Depends(admin_required), db=Depends(get_db)):
     """
     Check whether the given user has Admin access.
     """
 
     user_service = UserService(db)
-    user = user_service.check_admin_access(user_id)
+    user = user_service.check_admin_access(str(current_user["_id"]))
 
     return {
         "message": "Admin access granted",
@@ -31,7 +32,11 @@ def admin_only_endpoint(user_id: str = Query(...), db=Depends(get_db)):
 
 
 @router.get("/by-role", response_model=List[UserResponse])
-def get_users_by_role(role: str = Query(...), db=Depends(get_db)):
+def get_users_by_role(
+    role: str = Query(...),
+    current_user: dict = Depends(admin_required),
+    db=Depends(get_db)
+):
     """
     Fetch users by role.
     """

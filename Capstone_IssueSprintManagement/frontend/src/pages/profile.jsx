@@ -85,10 +85,19 @@ function Profile() {
         );
         return;
       }
+       if (passwordData.current_password === passwordData.new_password) {
+         showNotification(
+           "New password must be different from current password.",
+           "error",
+         );
+         return;
+       }
 
       try {
-        await changePassword(user.user_id, passwordData);
-
+        await changePassword(user.user_id, {
+          current_password: btoa(passwordData.current_password),
+          new_password: btoa(passwordData.new_password),
+        });
         setPasswordData(initialPasswordData);
         setShowCurrentPassword(false);
         setShowNewPassword(false);

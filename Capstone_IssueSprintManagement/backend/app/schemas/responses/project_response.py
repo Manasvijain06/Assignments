@@ -56,3 +56,13 @@ class ProjectDetailResponse(BaseModel):
     project_key: str
     members: List[UserResponse]
     created_by: Optional[ProjectCreatorResponse]
+
+class ProjectListResponse(BaseModel):
+    """
+    Paginated response for project listing.
+    """
+    items: List[ProjectDetailResponse]
+    page: int
+    limit: int
+    total: int
+    total_pages: int

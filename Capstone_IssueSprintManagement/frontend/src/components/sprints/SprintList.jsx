@@ -1,4 +1,5 @@
 function SprintList({
+    user,
     projects,
     sprints,
     selectedProjectId,
@@ -40,14 +41,15 @@ function SprintList({
           <div>
             <h1>Sprints</h1>
           </div>
-
-          <button
-            type="button"
-            className="new-project-btn"
-            onClick={openCreateModal}
-          >
-            + Create Sprint
-          </button>
+          {user?.role === "admin" && (
+            <button
+              type="button"
+              className="new-project-btn"
+              onClick={openCreateModal}
+            >
+              + Create Sprint
+            </button>
+          )}
         </div>
 
         <div className="issue-toolbar">
@@ -195,7 +197,7 @@ function SprintList({
                 <button
                   type="button"
                   className="modal-close"
-                  onClick={openCreateModal}
+                  onClick={() => setShowCreateModal(false)}
                 >
                   ×
                 </button>
@@ -233,7 +235,7 @@ function SprintList({
                   type="date"
                   value={sprintData.start_date}
                   onChange={(e) =>
-                    handleSprintDataChange("name", e.target.value)
+                    handleSprintDataChange("start_date", e.target.value)
                   }
                 />
 
@@ -242,7 +244,7 @@ function SprintList({
                   type="date"
                   value={sprintData.end_date}
                   onChange={(e) =>
-                    handleSprintDataChange("name", e.target.value)
+                    handleSprintDataChange("end_date", e.target.value)
                   }
                 />
 
@@ -254,7 +256,7 @@ function SprintList({
                   <button
                     type="button"
                     className="modal-cancel-btn"
-                    onClick={openCreateModal}
+                    onClick={() => setShowCreateModal(false)}
                   >
                     Cancel
                   </button>

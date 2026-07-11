@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends
 
+from fastapi.security import OAuth2PasswordRequestForm
+
 from app.dependencies.database import get_db
 from app.schemas.requests.auth_request import (
     UserRegisterRequest,
@@ -13,6 +15,22 @@ from app.services.user_service import UserService
 
 
 router = APIRouter()
+@router.post("/token")
+def swagger_login(form_data: OAuth2PasswordRequestForm = Depends(), db=Depends(get_db)):
+    """
+    Swagger login using email and plain password.
+    """
+    user_service = UserService(db)
+
+    result = user_service.login_plain_password(
+        email=form_data.username,
+        password=form_data.password,
+    )
+
+    return {
+        "access_token": result["access_token"],
+        "token_type": "bearer",
+    }
 
 @router.post("/register", response_model=UserRegisterResponse)
 def register_user(user: UserRegisterRequest, db=Depends(get_db)):

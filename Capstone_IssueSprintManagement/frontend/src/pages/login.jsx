@@ -93,7 +93,7 @@ function Login() {
           <form onSubmit={handleSubmit}>
             <label>Email</label>
             <input
-              type="email"
+              type="text"
               name="email"
               placeholder="Enter your email"
               value={formData.email}

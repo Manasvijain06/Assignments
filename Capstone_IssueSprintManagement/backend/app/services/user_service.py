@@ -6,6 +6,7 @@ from app.exceptions.user_exceptions import (
     InvalidCredentialsException,
     UserNotFoundException,
     AdminAccessRequiredException,
+    SamePasswordException,
 )
 
 from app.models.user_model import UserModel
@@ -110,3 +111,61 @@ class UserService:
             return base64.b64decode(password).decode("utf-8")
         except Exception as exc:
             raise InvalidPasswordEncodingException() from exc
+
+
+    def login_plain_password(self, email: str, password: str):
+        """
+        Authenticate a user using a plain password for Swagger.
+        """
+        user = self.user_repository.find_by_email(email)
+
+        if not user:
+            raise InvalidCredentialsException()
+
+        if not verify_password(password, user["password"]):
+            raise InvalidCredentialsException()
+
+        access_token = create_access_token(
+            {
+                "sub": str(user["_id"]),
+                "role": user["role"],
+            }
+        )
+
+        return {
+            "user_id": str(user["_id"]),
+            "name": user["name"],
+            "email": user["email"],
+            "role": user["role"],
+            "access_token": access_token,
+            "token_type": "bearer",
+        }
+
+    def change_password(self, user_id: str, password_data):
+        """
+        Change the user's password.
+        """
+        user = self.user_repository.find_by_id(user_id)
+
+        if not user:
+            raise UserNotFoundException()
+
+        current_password = self.decode_password(
+            password_data.current_password
+        )
+        new_password = self.decode_password(
+            password_data.new_password
+        )
+
+        if not verify_password(current_password, user["password"]):
+            raise InvalidCredentialsException()
+
+        if verify_password(new_password, user["password"]):
+            raise SamePasswordException()
+
+        hashed_password = hash_password(new_password)
+
+        self.user_repository.update_password(
+            user_id,
+            hashed_password,
+        )

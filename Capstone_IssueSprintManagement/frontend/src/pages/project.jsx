@@ -43,6 +43,12 @@ function Project() {
 
   const [projects, setProjects] = useState([]);
   const [selectedProject, setSelectedProject] = useState(null);
+
+   const [projectPage, setProjectPage] = useState(1);
+   const [projectTotalPages, setProjectTotalPages] = useState(1);
+   const [totalProjects, setTotalProjects] = useState(0);
+   const projectLimit = 6;
+
   const [availableMembers, setAvailableMembers] = useState([]);
   const [selectedMemberId, setSelectedMemberId] = useState("");
 
@@ -67,9 +73,12 @@ function Project() {
   });
 
   useEffect(() => {
-    loadProjects();
-    loadMembers();
+    loadUsers();
   }, []);
+
+  useEffect(() => {
+    loadProjects();
+  }, [projectPage]);
 
   const showNotification = (message, type = "success") => {
     setNotification({ message, type });
@@ -77,6 +86,14 @@ function Project() {
     setTimeout(() => {
       setNotification({ message: "", type: "" });
     }, 3000);
+  };
+
+  const getErrorMessage = (error, fallback) => {
+    if (Array.isArray(error?.detail)) {
+      return error.detail[0]?.msg || fallback;
+    }
+
+    return error?.detail || fallback;
   };
 
   const getFilteredProjects = (projectList) => {
@@ -91,39 +108,92 @@ function Project() {
 
   const loadProjects = async () => {
     try {
-      const data = await getProjects();
-      const filteredProjects = getFilteredProjects(data);
+      const response = await getProjects({
+        page: projectPage,
+        limit: projectLimit,
+      });
 
-      setProjects(getFilteredProjects(data));
-      await loadDashboardStats(filteredProjects);
+      const responseProjects = response.items || [];
+      const filteredProjects = getFilteredProjects(responseProjects);
+
+       const projectsWithIssueCounts =
+         await addIssueCountsToProjects(filteredProjects);
+
+       setProjects(projectsWithIssueCounts);
+       setProjectTotalPages(response.total_pages || 1);
+       setTotalProjects(response.total || 0);
+
+        const allProjectsResponse = await getProjects({
+          page: 1,
+          limit: 50,
+        });
+
+        const allVisibleProjects = getFilteredProjects(
+          allProjectsResponse.items || [],
+        );
+
+      await loadDashboardStats(allVisibleProjects);
     } catch (error) {
-      showNotification(error.detail || "Failed to load projects.","error");
+      showNotification(
+        getErrorMessage(error, "Failed to load projects."),
+        "error",
+      );
     }
   };
 
-  const loadMembers = async () => {
+  const loadUsers = async () => {
+    if (user.role !== "admin") {
+      return;
+    }
     try {
       const members = await getUsersByRole("member");
       const viewers = await getUsersByRole("viewer");
 
-      setAvailableMembers([...members, ...viewers]);
+      const memberItems = Array.isArray(members)
+        ? members
+        : members.items || [];
+
+      const viewerItems = Array.isArray(viewers)
+        ? viewers
+        : viewers.items || [];
+
+      setAvailableMembers([...memberItems, ...viewerItems]);
     } catch (error) {
-      showNotification(error.detail || "Failed to load users.","error");
+      showNotification(
+        getErrorMessage(error, "Failed to load users."),
+        "error",
+      );
     }
   };
 
   const refreshSelectedProject = async (projectId) => {
-    const data = await getProjects();
-    const filteredProjects = getFilteredProjects(data);
+    try {
+      const response = await getProjects({
+        page: projectPage,
+        limit: projectLimit,
+      });
+      const responseProjects = response.items || [];
+      const filteredProjects = getFilteredProjects(responseProjects);
 
-    setProjects(filteredProjects);
+      const projectsWithIssueCounts =
+        await addIssueCountsToProjects(filteredProjects);
 
-    const updatedProject = filteredProjects.find(
-      (project) => project.project_id === projectId,
-    );
+      setProjects(projectsWithIssueCounts);
+      setProjectTotalPages(response.total_pages || 1);
+      setTotalProjects(response.total || 0);
 
-    if (updatedProject) {
-      setSelectedProject(updatedProject);
+      const updatedProject = projectsWithIssueCounts.find(
+        (project) => project.project_id === projectId,
+      );
+
+      if (updatedProject) {
+        setSelectedProject(updatedProject);
+      }
+    } catch (error) {
+      showNotification(
+        getErrorMessage(error, "Failed to refresh project."),
+        "error",
+      );
     }
   };
 
@@ -146,15 +216,22 @@ function Project() {
     e.preventDefault();
 
     try {
-      await createProject(user.user_id, projectData);
+      await createProject(projectData);
 
       showNotification("Project created successfully!","success");
       setShowCreateModal(false);
       setProjectData(initialProjectData);
 
-      await loadProjects();
+      if (projectPage !== 1) {
+        setProjectPage(1);
+      } else {
+        await loadProjects();
+      }
     } catch (error) {
-      showNotification(error.detail || "Project creation failed.","error");
+      showNotification(
+        getErrorMessage(error, "Project creation failed."),
+        "error",
+      );
     }
   };
 
@@ -215,7 +292,11 @@ function Project() {
       setShowDeleteModal(false);
       setProjectToDelete(null);
 
-      await loadProjects();
+      if (projects.length === 1 && projectPage > 1) {
+        setProjectPage((prev) => prev - 1);
+      } else {
+        await loadProjects();
+      }
     } catch (error) {
       showNotification(error.detail || "Project deletion failed.","error");
     }
@@ -226,7 +307,6 @@ function Project() {
 
     try {
       await addMemberToProject(selectedProject.project_id, {
-        admin_id: user.user_id,
         member_id: memberId,
       });
 
@@ -242,7 +322,6 @@ function Project() {
   const handleRemoveMember = async (memberId) => {
     try {
       await removeMemberFromProject(selectedProject.project_id, {
-        admin_id: user.user_id,
         member_id: memberId,
       });
 
@@ -271,7 +350,7 @@ function Project() {
           search: "",
         });
 
-        const allIssues = issueResponse.items.flatMap((issue) => [
+        const allIssues = (issueResponse.items || []).flatMap((issue) => [
           issue,
           ...(issue.children || []),
         ]);
@@ -293,8 +372,7 @@ function Project() {
         search: "",
       });
 
-      activeSprints = sprintResponse.items.length;
-
+      activeSprints = (sprintResponse.items || []).length;
       setDashboardStats({
         totalIssues,
         openIssues,
@@ -304,6 +382,30 @@ function Project() {
     } catch (error) {
       showNotification(error.detail || "Failed to load dashboard stats.","error");
     }
+  };
+  const addIssueCountsToProjects = async (projectList) => {
+    return Promise.all(
+      projectList.map(async (project) => {
+        const issueResponse = await getProjectIssues(project.project_id, {
+          page: 1,
+          limit: 50,
+          status: "all",
+          priority: "all",
+          assignee: "all",
+          search: "",
+        });
+
+        const allIssues = (issueResponse.items || []).flatMap((issue) => [
+          issue,
+          ...(issue.children || []),
+        ]);
+
+        return {
+          ...project,
+          issue_count: allIssues.length,
+        };
+      }),
+    );
   };
   return (
     <div className="dashboard-layout">
@@ -315,7 +417,11 @@ function Project() {
             user={user}
             isAdmin={isAdmin}
             projects={projects}
+            totalProjects={totalProjects}
             dashboardStats={dashboardStats}
+            page={projectPage}
+            setPage={setProjectPage}
+            totalPages={projectTotalPages}
             setSelectedProject={setSelectedProject}
             setShowCreateModal={setShowCreateModal}
             showCreateModal={showCreateModal}

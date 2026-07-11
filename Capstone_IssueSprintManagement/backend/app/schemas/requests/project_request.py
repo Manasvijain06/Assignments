@@ -25,7 +25,6 @@ class AddMemberRequest(BaseModel):
     """
     Request schema for adding a member to a project.
     """
-    admin_id: str
     member_id: str
 
 
@@ -33,6 +32,4 @@ class RemoveMemberRequest(BaseModel):
     """
     Request schema for removing a member from a project.
     """
-
-    admin_id: str
     member_id: str

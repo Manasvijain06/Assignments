@@ -1,19 +1,45 @@
 from unittest.mock import patch
 
+import pytest
+from bson import ObjectId
 from fastapi.testclient import TestClient
 
+from app.dependencies.authentication import get_current_user
 from app.dependencies.database import get_db
-from app.exceptions.sprint_exceptions import DoneIssueCannotBeAddedException
+from app.exceptions.sprint_exceptions import (
+    DoneIssueCannotBeAddedException,
+)
 from main import app
 
 client = TestClient(app)
+
+ADMIN_ID = "507f1f77bcf86cd799439012"
+PROJECT_ID = "507f1f77bcf86cd799439011"
+SPRINT_ID = "507f1f77bcf86cd799439011"
+ISSUE_ID = "507f1f77bcf86cd799439012"
 
 
 def override_get_db():
     return {}
 
 
-app.dependency_overrides[get_db] = override_get_db
+def override_get_current_user():
+    return {
+        "_id": ObjectId(ADMIN_ID),
+        "name": "Admin",
+        "email": "admin@gmail.com",
+        "role": "admin",
+    }
+
+
+@pytest.fixture(autouse=True)
+def override_dependencies():
+    app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_current_user] = override_get_current_user
+
+    yield
+
+    app.dependency_overrides.clear()
 
 
 @patch("app.router.sprint.SprintService")
@@ -24,8 +50,8 @@ def test_create_sprint_success(mock_sprint_service):
         "/sprints/",
         json={
             "name": "Sprint 1",
-            "project_id": "507f1f77bcf86cd799439011",
-            "created_by": "507f1f77bcf86cd799439012",
+            "project_id": PROJECT_ID,
+            "created_by": ADMIN_ID,
             "start_date": "2026-07-10",
             "end_date": "2026-07-15",
         },
@@ -41,9 +67,9 @@ def test_add_issue_to_sprint_success(mock_sprint_service):
     mock_sprint_service.return_value.add_issue_to_sprint.return_value = None
 
     response = client.post(
-        "/sprints/507f1f77bcf86cd799439011/issues",
+        f"/sprints/{SPRINT_ID}/issues",
         json={
-            "issue_id": "507f1f77bcf86cd799439012",
+            "issue_id": ISSUE_ID,
         },
     )
 
@@ -58,9 +84,9 @@ def test_prevent_adding_done_issue(mock_sprint_service):
     )
 
     response = client.post(
-        "/sprints/507f1f77bcf86cd799439011/issues",
+        f"/sprints/{SPRINT_ID}/issues",
         json={
-            "issue_id": "507f1f77bcf86cd799439012",
+            "issue_id": ISSUE_ID,
         },
     )
 

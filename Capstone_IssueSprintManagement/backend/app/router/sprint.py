@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, Query
 
 from app.dependencies.database import get_db
+from app.dependencies.authentication import get_current_user
+from app.dependencies.authorization import RoleChecker
 from app.schemas.requests.sprint_request import (
     CreateSprintRequest,
     SprintIssueRequest,
@@ -14,10 +16,11 @@ from app.schemas.responses.sprint_response import (
 from app.services.sprint_service import SprintService
 
 router = APIRouter()
+admin_required = RoleChecker(["admin"])
 
 
 @router.post("/", response_model=CreateSprintResponse)
-def create_sprint(request: CreateSprintRequest, db=Depends(get_db)):
+def create_sprint(request: CreateSprintRequest,current_user: dict = Depends(admin_required), db=Depends(get_db)):
     """
     Create a new sprint.
     """
@@ -31,7 +34,7 @@ def create_sprint(request: CreateSprintRequest, db=Depends(get_db)):
 
 
 @router.post("/{sprint_id}/issues", response_model=SprintStatusResponse)
-def add_issue_to_sprint(sprint_id: str, request: SprintIssueRequest, db=Depends(get_db)):
+def add_issue_to_sprint(sprint_id: str, request: SprintIssueRequest,current_user: dict = Depends(admin_required), db=Depends(get_db)):
     """
     Add issues to sprint.
     """
@@ -43,7 +46,7 @@ def add_issue_to_sprint(sprint_id: str, request: SprintIssueRequest, db=Depends(
 
 
 @router.delete("/{sprint_id}/issues", response_model=SprintStatusResponse)
-def remove_issue_from_sprint(sprint_id: str, request: SprintIssueRequest, db=Depends(get_db)):
+def remove_issue_from_sprint(sprint_id: str, request: SprintIssueRequest,current_user: dict = Depends(admin_required), db=Depends(get_db)):
     """
     Remove issue from the sprint.
     """
@@ -60,6 +63,7 @@ def get_sprints(
     project_id: str | None = Query(None),
     status: str | None = Query(None),
     search: str | None = Query(None),
+    current_user: dict = Depends(get_current_user),
     db=Depends(get_db),
 ):
     """
@@ -77,7 +81,7 @@ def get_sprints(
     )
 
 @router.patch("/{sprint_id}/start", response_model=SprintStatusResponse)
-def start_sprint(sprint_id: str, request: SprintStatusRequest, db=Depends(get_db)):
+def start_sprint(sprint_id: str, request: SprintStatusRequest,current_user: dict = Depends(admin_required), db=Depends(get_db)):
     """
     Start a sprint.
     """
@@ -88,7 +92,7 @@ def start_sprint(sprint_id: str, request: SprintStatusRequest, db=Depends(get_db
 
 
 @router.patch("/{sprint_id}/complete", response_model=SprintStatusResponse)
-def complete_sprint(sprint_id: str, request: SprintStatusRequest, db=Depends(get_db)):
+def complete_sprint(sprint_id: str, request: SprintStatusRequest,current_user: dict = Depends(admin_required), db=Depends(get_db)):
     """
     Complete an active sprint.
     """

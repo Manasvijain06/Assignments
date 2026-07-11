@@ -9,18 +9,17 @@ import Profile from "./pages/Profile";
 function App() {
   return (
     <Routes>
+      {/* Default */}
       <Route path="/" element={<Navigate to="/login" />} />
 
+      {/* Authentication */}
       <Route path="/register" element={<Register />} />
-
       <Route path="/login" element={<Login />} />
 
+      {/* Application */}
       <Route path="/projects" element={<ProjectManagement />} />
-
       <Route path="/issues" element={<Issue />} />
-
       <Route path="/sprints" element={<Sprint />} />
-
       <Route path="/profile" element={<Profile />} />
     </Routes>
   );

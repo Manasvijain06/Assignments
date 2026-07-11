@@ -1,3 +1,5 @@
+import math
+
 from bson import ObjectId
 from bson.errors import InvalidId
 
@@ -72,11 +74,17 @@ class ProjectService:
         result = self.project_repository.create_project(project)
         return str(result.inserted_id)
 
-    def get_all_projects(self):
+    def get_all_projects(
+            self,
+            page: int,
+            limit: int,
+        ):
         """
-        Fetch a list of all projects.
+        Fetch projects with pagination.
         """
-        projects = self.project_repository.get_all_projects()
+        total = self.project_repository.count_projects()
+
+        projects = self.project_repository.get_all_projects(page=page,limit=limit)
         project_list = []
 
         for project in projects:
@@ -116,7 +124,17 @@ class ProjectService:
                 }
             )
 
-        return project_list
+        return {
+            "items": project_list,
+            "total": total,
+            "page": page,
+            "limit": limit,
+            "total_pages":(
+                math.ceil(total / limit)
+                if total > 0
+                else 1
+            ),
+        }
 
     def update_project(self, project_id: str, project_data):
         """

@@ -73,36 +73,48 @@ function Sprint() {
     };
 
     const loadProjects = async () => {
-        try {
-            const data = await getProjects();
+      try {
+        const response = await getProjects({
+          page: 1,
+          limit: 50,
+        });
 
-            const visibleProjects =
-                user.role === "admin"
-                    ? data
-                    : data.filter((project) =>
-                        project.members?.some(
-                            (member) => member.user_id === user.user_id,
-                        ),
-                    );
+        const projectItems = response.items || [];
 
-            setProjects(visibleProjects);
+        const visibleProjects =
+          user.role === "admin"
+            ? projectItems
+            : projectItems.filter((project) =>
+                (project.members || []).some(
+                  (member) => member.user_id === user.user_id,
+                ),
+              );
 
-            const savedProjectId = localStorage.getItem("selectedProjectId");
-            const projectExists = visibleProjects.some(
-              (project) => project.project_id === savedProjectId,
-            );
+        setProjects(visibleProjects);
 
-            if (projectExists) {
-              setSelectedProjectId(savedProjectId);
-            } else if (visibleProjects.length > 0) {
-              const firstProjectId = visibleProjects[0].project_id;
+        const savedProjectId = localStorage.getItem("selectedProjectId");
 
-              setSelectedProjectId(firstProjectId);
-              localStorage.setItem("selectedProjectId", firstProjectId);
-            }
-        } catch (error) {
-            showNotification(error.detail || "Failed to load projects.", "error");
+        const projectExists = visibleProjects.some(
+          (project) => project.project_id === savedProjectId,
+        );
+
+        if (projectExists) {
+          setSelectedProjectId(savedProjectId);
+        } else if (visibleProjects.length > 0) {
+          const firstProjectId = visibleProjects[0].project_id;
+
+          setSelectedProjectId(firstProjectId);
+          localStorage.setItem("selectedProjectId", firstProjectId);
+        } else {
+          setSelectedProjectId("all");
+          localStorage.removeItem("selectedProjectId");
         }
+      } catch (error) {
+        showNotification(
+          getErrorMessage(error, "Failed to load projects."),
+          "error",
+        );
+      }
     };
 
     const loadSprints = async () => {
@@ -301,6 +313,7 @@ function Sprint() {
             <main className="dashboard-main">
                 {!selectedSprint ? (
                     <SprintList
+                        user={user}
                         projects={projects}
                         sprints={sprints}
                         selectedProjectId={selectedProjectId}

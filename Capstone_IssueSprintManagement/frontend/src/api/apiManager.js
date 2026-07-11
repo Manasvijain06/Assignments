@@ -8,6 +8,30 @@ const api = axios.create({
     },
 });
 
+api.interceptors.request.use(
+  (config) => {
+    const storedUser = JSON.parse(
+      localStorage.getItem("user") || "{}"
+    );
+
+    if (storedUser.access_token) {
+      config.headers.Authorization =
+        `Bearer ${storedUser.access_token}`;
+    }
+
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+const handleError = (error) => {
+  throw (
+    error.response?.data || {
+      detail: "Something went wrong.",
+    }
+  );
+};
+
 // GET
 export const _get = async (url) => {
     try {
