@@ -1,95 +1,68 @@
 import base64
-import uuid
+from unittest.mock import patch
+
 from fastapi.testclient import TestClient
 from main import app
+from app.exceptions.user_exceptions import InvalidCredentialsException
+
+client = TestClient(app)
 
 
 def encode_password(password: str) -> str:
     return base64.b64encode(password.encode()).decode()
 
 
-def test_login_success():
-    email = f"login_{uuid.uuid4().hex[:8]}@example.com"
-    password = "Password123!"
+@patch("app.router.auth.mongodb.db", new={})
+@patch("app.router.auth.UserService")
+def test_login_success(mock_user_service):
+    mock_user_service.return_value.login_user.return_value = {
+        "user_id": "mock_user_id",
+        "name": "Manasvi",
+        "email": "manasvi@example.com",
+        "role": "member",
+    }
 
-    with TestClient(app) as client:
-        register_response = client.post(
-            "/auth/register",
-            json={
-                "name": "Login Test User",
-                "email": email,
-                "password": encode_password(password),
-                "role": "member",
-            },
-        )
+    response = client.post(
+        "/auth/login",
+        json={
+            "email": "manasvi@example.com",
+            "password": encode_password("Password123!"),
+        },
+    )
 
-        assert register_response.status_code == 200
-
-        login_response = client.post(
-            "/auth/login",
-            json={
-                "email": email,
-                "password": encode_password(password),
-            },
-        )
-
-    assert login_response.status_code == 200
-    assert login_response.json()["message"] == "Login successful"
-    assert login_response.json()["email"] == email
-    assert login_response.json()["role"] == "member"
-    assert "user_id" in login_response.json()
+    assert response.status_code == 200
+    assert response.json()["message"] == "Login successful"
+    assert response.json()["user_id"] == "mock_user_id"
+    assert response.json()["email"] == "manasvi@example.com"
+    assert response.json()["role"] == "member"
 
 
-def test_login_invalid_password():
-    email = f"login_{uuid.uuid4().hex[:8]}@example.com"
+@patch("app.router.auth.mongodb.db", new={})
+@patch("app.router.auth.UserService")
+def test_login_invalid_credentials(mock_user_service):
+    mock_user_service.return_value.login_user.side_effect = (
+        InvalidCredentialsException()
+    )
 
-    with TestClient(app) as client:
-        register_response = client.post(
-            "/auth/register",
-            json={
-                "name": "Login Test User",
-                "email": email,
-                "password": encode_password("Password123!"),
-                "role": "member",
-            },
-        )
-
-        assert register_response.status_code == 200
-
-        login_response = client.post(
-            "/auth/login",
-            json={
-                "email": email,
-                "password": encode_password("WrongPassword123!"),
-            },
-        )
-
-    assert login_response.status_code == 401
-    assert login_response.json()["detail"] == "Invalid email or password"
-
-
-def test_login_user_not_found():
-    with TestClient(app) as client:
-        response = client.post(
-            "/auth/login",
-            json={
-                "email": f"missing_{uuid.uuid4().hex[:8]}@example.com",
-                "password": encode_password("Password123!"),
-            },
-        )
+    response = client.post(
+        "/auth/login",
+        json={
+            "email": "manasvi@example.com",
+            "password": encode_password("WrongPassword123!"),
+        },
+    )
 
     assert response.status_code == 401
     assert response.json()["detail"] == "Invalid email or password"
 
 
 def test_login_invalid_email():
-    with TestClient(app) as client:
-        response = client.post(
-            "/auth/login",
-            json={
-                "email": "invalid-email",
-                "password": encode_password("Password123!"),
-            },
-        )
+    response = client.post(
+        "/auth/login",
+        json={
+            "email": "invalid-email",
+            "password": encode_password("Password123!"),
+        },
+    )
 
     assert response.status_code == 422

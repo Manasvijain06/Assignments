@@ -84,3 +84,15 @@ class UserService:
             "email": user["email"],
             "role": user["role"]
         }
+
+    def get_users_by_role(self, role: str):
+        users = self.collection.find({"role": role})
+
+        return [
+        {
+            "name": user["name"],
+            "email": user["email"],
+            "role": user["role"],
+        }
+        for user in users
+    ]

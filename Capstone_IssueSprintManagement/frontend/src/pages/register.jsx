@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { registerUser } from "../services/auth-Service";
 import { validateRegisterForm } from "../utils/validation";
+import { Link, useNavigate } from "react-router-dom";
 
 function Register() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
-    role: "member",
+    role: "",
   });
 
   const [errors, setErrors] = useState({});
@@ -58,6 +60,7 @@ function Register() {
         password: "",
         role: "member",
       });
+      navigate("/login");
     } catch (error) {
       setMessage(error.detail || "Registration Failed");
     } finally {
@@ -68,7 +71,6 @@ function Register() {
   return (
     <div className="container">
       <h2>User Registration</h2>
-
       <form onSubmit={handleSubmit}>
         <div>
           <label>Name</label>
@@ -109,6 +111,7 @@ function Register() {
         <div>
           <label>Role</label>
           <select name="role" value={formData.role} onChange={handleChange}>
+            <option value="">Select Role</option>
             <option value="member">Member</option>
             <option value="admin">Admin</option>
             <option value="viewer">Viewer</option>
@@ -120,12 +123,14 @@ function Register() {
           {loading ? "Registering..." : "Register"}
         </button>
       </form>
-
       {message && (
         <p className={message.includes("successfully") ? "success" : "error"}>
           {message}
         </p>
       )}
+      <p>
+        Already have an account? <Link to="/login">Login</Link>
+      </p>
     </div>
   );
 }

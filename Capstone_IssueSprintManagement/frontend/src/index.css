@@ -4,15 +4,15 @@ body {
 }
 
 .container {
-  width: 400px;
-  margin: 50px auto;
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
+  max-width: 1100px;
+  margin: 30px auto;
+  padding: 24px;
+  font-family: Arial, sans-serif;
 }
 
 h2 {
-  text-align: center;
+  margin-bottom: 20px;
+  color: #1f2937;
 }
 
 input,
@@ -35,4 +35,119 @@ button {
 .success {
   color: green;
   margin-top: 20px;
+}
+
+.project-content {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 24px;
+}
+
+.project-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.project-card h3 {
+  margin-bottom: 14px;
+  color: #111827;
+}
+
+.project-list-item {
+  padding: 12px;
+  margin-bottom: 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  cursor: pointer;
+  background: #f9fafb;
+}
+
+.project-list-item:hover {
+  background: #eef2ff;
+  border-color: #6366f1;
+}
+
+.project-list-item strong {
+  color: #111827;
+}
+
+.project-list-item p {
+  margin: 4px 0 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+input,
+select {
+  width: 100%;
+  padding: 10px;
+  margin: 8px 0 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+input:focus,
+select:focus {
+  outline: none;
+  border-color: #6366f1;
+}
+
+button {
+  padding: 10px 14px;
+  margin: 6px 8px 6px 0;
+  border: none;
+  border-radius: 6px;
+  background: #4f46e5;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+button:hover {
+  background: #4338ca;
+}
+
+button:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+hr {
+  margin: 20px 0;
+  border: none;
+  border-top: 1px solid #e5e7eb;
+}
+
+.success {
+  margin-top: 18px;
+  color: #16a34a;
+  font-weight: 500;
+}
+
+.error {
+  margin-top: 18px;
+  color: #dc2626;
+  font-weight: 500;
+}
+
+.member-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f9fafb;
+  padding: 10px;
+  margin-bottom: 8px;
+  border-radius: 6px;
+}
+
+.member-row button {
+  background: #dc2626;
+}
+
+.member-row button:hover {
+  background: #b91c1c;
 }

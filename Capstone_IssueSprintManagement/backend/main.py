@@ -1,11 +1,12 @@
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
-from app.router import auth, admin
+from app.exceptions.handlers import register_exception_handlers
+from app.router import auth, admin, project
 from app.database.mongodb import connect_db, close_db
 
 app = FastAPI(title="Issue Sprint Management System")
+register_exception_handlers(app)
 FRONTEND_URL = os.getenv("FRONTEND_URL")
 # -------------------------
 # CORS CONFIG
@@ -35,6 +36,7 @@ def shutdown_db():
 # -------------------------
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 app.include_router(admin.router, prefix="/users", tags=["Role Checks"])
+app.include_router(project.router, prefix="/projects", tags=["Projects"])
 
 @app.get("/")
 def root():
