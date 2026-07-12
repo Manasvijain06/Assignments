@@ -31,8 +31,7 @@ class UserService:
         if existing_user:
             raise UserAlreadyExistsException()
 
-        decoded_password = self.decode_password(user_data.password)
-        hashed_password = hash_password(decoded_password)
+        hashed_password = hash_password(user_data.password)
 
         new_user = UserModel.build(
             name=user_data.name,
@@ -53,9 +52,7 @@ class UserService:
         if not user:
             raise InvalidCredentialsException()
 
-        decoded_password = self.decode_password(login_data.password)
-
-        if not verify_password(decoded_password, user["password"]):
+        if not verify_password(login_data.password, user["password"]):
             raise InvalidCredentialsException()
 
         access_token = create_access_token(
@@ -103,15 +100,6 @@ class UserService:
         for user in users
     ]
 
-    def decode_password(self, password: str):
-        """
-        Decode Base64 password.
-        """
-        try:
-            return base64.b64decode(password).decode("utf-8")
-        except Exception as exc:
-            raise InvalidPasswordEncodingException() from exc
-
 
     def login_plain_password(self, email: str, password: str):
         """
@@ -150,12 +138,8 @@ class UserService:
         if not user:
             raise UserNotFoundException()
 
-        current_password = self.decode_password(
-            password_data.current_password
-        )
-        new_password = self.decode_password(
-            password_data.new_password
-        )
+        current_password = password_data.current_password
+        new_password = password_data.new_password
 
         if not verify_password(current_password, user["password"]):
             raise InvalidCredentialsException()

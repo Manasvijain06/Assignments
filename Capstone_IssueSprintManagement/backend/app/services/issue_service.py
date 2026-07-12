@@ -254,7 +254,7 @@ class IssueService:
         assignee_id = issue.get("assignee")
 
         if (
-            current_user_role["role"] != "admin"
+            current_user_role != "admin"
             and str(assignee_id) != current_user_id
         ):
             raise AssigneeRequiredException()

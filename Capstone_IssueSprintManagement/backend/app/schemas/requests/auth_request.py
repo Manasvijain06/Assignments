@@ -1,4 +1,3 @@
-import base64
 import re
 from typing import Literal
 
@@ -29,19 +28,10 @@ class UserRegisterRequest(BaseModel):
         """
         Validate decoded password strength.
         """
-        try:
-            decoded_password = base64.b64decode(
-                password,
-                validate=True,
-            ).decode("utf-8")
-        except Exception as exc:
-            raise ValueError(
-                "Password must be valid Base64 encoded text."
-            ) from exc
 
         pattern = r"^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*]).{6,}$"
 
-        if not re.match(pattern, decoded_password):
+        if not re.match(pattern, password):
             raise ValueError(
                 "Password must be at least 6 characters and include"
                 "uppercase, lowercase, digit, and special character."
@@ -55,4 +45,4 @@ class UserLoginRequest(BaseModel):
     """
 
     email: EmailStr
-    password: str = Field(description="Base64-encoded password")
+    password: str = Field(description="Plain password")

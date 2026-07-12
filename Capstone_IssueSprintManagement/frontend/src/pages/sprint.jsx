@@ -238,7 +238,7 @@ function Sprint() {
                 start_date: sprintData.start_date,
                 end_date: sprintData.end_date,
             });
-
+            await loadSprints();
             showNotification("Sprint created successfully.", "success");
             setShowCreateModal(false);
 
@@ -249,7 +249,7 @@ function Sprint() {
                 end_date: "",
             });
             setPage(1);
-            await loadSprints();
+
         } catch (error) {
             showNotification(error.detail || "Sprint creation failed.", "error");
         }

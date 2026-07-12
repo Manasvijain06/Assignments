@@ -56,9 +56,14 @@ function Profile() {
            name: name.trim(),
          });
 
-         localStorage.setItem("user", JSON.stringify(response.user));
-         setUser(response.user);
-         setName(response.user.name);
+         const updatedUser = {
+           ...user,
+           ...response.user,
+         };
+
+         localStorage.setItem("user", JSON.stringify(updatedUser));
+         setUser(updatedUser);
+         setName(updatedUser.name);
          setIsEditing(false);
 
          showNotification("Profile updated successfully.", "success");
@@ -95,8 +100,8 @@ function Profile() {
 
       try {
         await changePassword(user.user_id, {
-          current_password: btoa(passwordData.current_password),
-          new_password: btoa(passwordData.new_password),
+          current_password: passwordData.current_password,
+          new_password: passwordData.new_password,
         });
         setPasswordData(initialPasswordData);
         setShowCurrentPassword(false);
@@ -154,7 +159,7 @@ function Profile() {
               </section>
             </div>
           ) : (
-            <div className="project-overview-grid">
+            <div className="profil-card-grid">
               <div className="overview-card">
                 <h3>Edit Profile</h3>
 

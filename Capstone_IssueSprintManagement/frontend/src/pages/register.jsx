@@ -66,11 +66,7 @@ function Register() {
     setLoading(true);
 
     try {
-      const encryptedFormData = {
-        ...formData,
-        password: btoa(formData.password),
-      };
-      const response = await registerUser(encryptedFormData);
+      await registerUser(formData);
 
       showNotification("Registration successful!","success");
       setFormData(initialFormData);

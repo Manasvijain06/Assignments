@@ -105,7 +105,7 @@ def get_project_stories(
 def add_comment(
     issue_id: str,
     request: CreateCommentRequest,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(admin_or_member_required),
     db=Depends(get_db)
 ):
     """
@@ -124,7 +124,7 @@ def update_comment(
     issue_id: str,
     comment_id: str,
     request: UpdateCommentRequest,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(admin_or_member_required),
     db=Depends(get_db),
 ):
     """
@@ -143,7 +143,7 @@ def delete_comment(
     issue_id: str,
     comment_id: str,
     user_id: str,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(admin_or_member_required),
     db=Depends(get_db),
 ):
     """
