@@ -19,7 +19,7 @@ function Project() {
   const [projects, setProjects] = useState([]);
   const [selectedProject, setSelectedProject] = useState(null);
   const [availableMembers, setAvailableMembers] = useState([]);
-  const [selectedMemberEmail, setSelectedMemberEmail] = useState("");
+  const [selectedMemberId, setSelectedMemberId] = useState("");
 
   const [memberAdded, setMemberAdded] = useState(false);
   const [memberRemoved, setMemberRemoved] = useState(false);
@@ -51,14 +51,20 @@ function Project() {
 
   const getFilteredProjects = (data) => {
     if (user?.role === "admin") return data;
-    return data.filter((project) => project.members.includes(user.email));
+
+    return data.filter((project) =>
+      project.members.some((member) => member.user_id === user.user_id),
+    );
   };
 
   const loadProjects = async () => {
     try {
       const data = await getProjects();
+      console.log("Projects from API:", data);
+
       setProjects(getFilteredProjects(data));
     } catch (error) {
+      console.log("Project load error:", error);
       toast.error(error.detail || "Failed to load projects.");
     }
   };
@@ -99,7 +105,7 @@ function Project() {
     e.preventDefault();
 
     try {
-      await createProject(user.email, projectData);
+      await createProject(user.user_id, projectData);
 
       toast.success("Project created successfully!");
       setShowCreateModal(false);
@@ -127,7 +133,7 @@ function Project() {
     setMemberAdded(false);
     setMemberRemoved(false);
     setDescriptionUpdated(false);
-    setSelectedMemberEmail("");
+    setSelectedMemberId("");
 
     setShowEditModal(true);
   };
@@ -183,17 +189,17 @@ function Project() {
     }
   };
 
-  const handleAddMember = async (memberEmail) => {
-    if (!memberEmail) return;
+  const handleAddMember = async (memberId) => {
+    if (!memberId) return;
 
     try {
       await addMemberToProject(selectedProject.project_id, {
-        admin_email: user.email,
-        member_email: memberEmail,
+        admin_id: user.user_id,
+        member_id: memberId,
       });
 
       setMemberAdded(true);
-      setSelectedMemberEmail("");
+      setSelectedMemberId("");
 
       await refreshSelectedProject(selectedProject.project_id);
     } catch (error) {
@@ -201,11 +207,11 @@ function Project() {
     }
   };
 
-  const handleRemoveMember = async (memberEmail) => {
+  const handleRemoveMember = async (memberId) => {
     try {
       await removeMemberFromProject(selectedProject.project_id, {
-        admin_email: user.email,
-        member_email: memberEmail,
+        admin_id: user.user_id,
+        member_id: memberId,
       });
 
       setMemberRemoved(true);
@@ -370,7 +376,7 @@ function Project() {
                 <p>{selectedProject.project_key}</p>
 
                 <p className="label">Project Lead</p>
-                <p>{selectedProject.created_by}</p>
+                <p>{selectedProject.created_by?.name || "N/A"}</p>
 
                 <p className="label">Description</p>
                 <p>{selectedProject.description}</p>
@@ -379,22 +385,24 @@ function Project() {
               <div className="overview-card">
                 <h3>Members ({selectedProject.members.length})</h3>
 
-                {selectedProject.members.length > 0 ? (
-                  [...selectedProject.members].reverse().map((member) => (
-                    <div className="member-preview" key={member}>
-                      <div className="member-avatar">
-                        {member.charAt(0).toUpperCase()}
-                      </div>
+                <div className="members-scroll">
+                  {selectedProject.members.length > 0 ? (
+                    [...selectedProject.members].reverse().map((member) => (
+                      <div className="member-preview" key={member.user_id}>
+                        <div className="member-avatar">
+                          {member.name.charAt(0).toUpperCase()}
+                        </div>
 
-                      <div className="member-info">
-                        <strong>{member}</strong>
-                        <p>Member</p>
+                        <div className="member-info">
+                          <strong>{member.name}</strong>
+                          <p>{member.role}</p>
+                        </div>
                       </div>
-                    </div>
-                  ))
-                ) : (
-                  <p>No members assigned.</p>
-                )}
+                    ))
+                  ) : (
+                    <p>No members assigned.</p>
+                  )}
+                </div>
               </div>
 
               <div className="overview-card">
@@ -536,16 +544,16 @@ function Project() {
 
                   <label>Add Member</label>
                   <select
-                    value={selectedMemberEmail}
+                    value={selectedMemberId}
                     onChange={(e) => {
-                      setSelectedMemberEmail(e.target.value);
+                      setSelectedMemberId(e.target.value);
                       handleAddMember(e.target.value);
                     }}
                   >
                     <option value="">Select member to add</option>
                     {availableMembers.map((member) => (
-                      <option key={member.email} value={member.email}>
-                        {member.name} ({member.email})
+                      <option key={member.user_id} value={member.user_id}>
+                        {member.name} ({member.role}) - {member.email}
                       </option>
                     ))}
                   </select>
@@ -555,12 +563,12 @@ function Project() {
                   <div className="assigned-member-list">
                     {selectedProject.members.length > 0 ? (
                       selectedProject.members.map((member) => (
-                        <div className="modal-member-row" key={member}>
-                          <span>{member}</span>
+                        <div className="modal-member-row" key={member.user_id}>
+                          <span>{member.name}</span>
 
                           <button
                             type="button"
-                            onClick={() => handleRemoveMember(member)}
+                            onClick={() => handleRemoveMember(member.user_id)}
                           >
                             ×
                           </button>

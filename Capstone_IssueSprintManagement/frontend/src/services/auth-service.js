@@ -12,8 +12,8 @@ export const getUsersByRole = async (role) => {
     return _get(`/users/by-role?role=${role}`);
 };
 
-export const createProject = async (adminEmail, projectData) => {
-    return _post(`/projects/?admin_email=${adminEmail}`, projectData);
+export const createProject = async (adminId, projectData) => {
+    return _post(`/projects/?admin_id=${adminId}`, projectData);
 };
 
 export const addMemberToProject = async (projectId, memberData) => {

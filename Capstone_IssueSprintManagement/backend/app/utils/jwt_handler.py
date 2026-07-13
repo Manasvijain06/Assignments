@@ -1,21 +1,34 @@
 from jose import jwt
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
+from app.core.config import settings
 
-SECRET_KEY = "issue_sprint_secret_key"
-ALGORITHM = "HS256"
-
-def create_access_token(data: dict):
+def create_access_token(data: dict) -> str:
+    """
+    Generate a JWT access token.
+    """
 
     payload = data.copy()
 
-    expire = datetime.utcnow() + timedelta(hours=1)
+    expire = datetime.now(UTC) + timedelta(
+        minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
+    )
 
     payload.update({"exp": expire})
 
-    token = jwt.encode(
+    return jwt.encode(
         payload,
-        SECRET_KEY,
-        algorithm=ALGORITHM
+        settings.SECRET_KEY,
+        algorithm=settings.ALGORITHM
     )
 
-    return token
+
+def decode_access_token(token: str) -> dict:
+    """
+    Decode and validate a JWT access token.
+    """
+
+    return jwt.decode(
+        token,
+        settings.SECRET_KEY,
+        algorithms=[settings.ALGORITHM],
+    )

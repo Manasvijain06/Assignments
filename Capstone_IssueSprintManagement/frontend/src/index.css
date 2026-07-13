@@ -552,6 +552,18 @@ hr {
   box-shadow: 0 8px 20px rgba(79, 70, 229, 0.12);
 }
 
+.members-card {
+  height: 360px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.members-scroll {
+  overflow-y: auto;
+  padding-right: 8px;
+  max-height: 250px;
+}
 
 /*-------------Sidebar-----------*/
 .dashboard-sidebar {
@@ -1067,7 +1079,8 @@ hr {
 .project-overview-grid {
   display: grid;
   grid-template-columns: 1.2fr 1.2fr 1fr;
-  gap: 28px;
+  gap: 35px;
+  align-items: start;
 }
 
 .overview-card {
@@ -1075,7 +1088,7 @@ hr {
   border: 1px solid #e5e7eb;
   border-radius: 16px;
   padding: 28px;
-  min-height: 330px;
+  overflow: hidden;
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.04);
 }
 
