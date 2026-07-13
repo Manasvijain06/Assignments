@@ -52,3 +52,20 @@ export const updateIssueStatus = async (issueId, data) => {
 export const getProjectStories = async (projectId) => {
     return _get(`/projects/${projectId}/stories`);
 };
+
+export const createSprint = async (data) => {
+    return _post("/sprints/", data);
+};
+
+export const addIssueToSprint = async (sprintId, data) => {
+    return _post(`/sprints/${sprintId}/issues`, data);
+};
+
+export const removeIssueFromSprint = async (sprintId, data) => {
+    return _delete(`/sprints/${sprintId}/issues`, data);
+};
+
+export const getSprints = async (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    return _get(`/sprints/?${query}`);
+};

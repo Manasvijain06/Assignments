@@ -4,7 +4,7 @@ import { validateRegisterForm } from "../utils/validation";
 import { Link, useNavigate } from "react-router-dom";
 import authImage from "../assets/auth-image.png";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
-import { toast } from "react-toastify";
+import Notification from "../components/Notification";
 
 function Register() {
   const navigate = useNavigate();
@@ -19,6 +19,18 @@ function Register() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  const [notification, setNotification] = useState({
+    message: "",
+    type: "",
+  });
+
+  const showNotification = (message, type = "success") => {
+    setNotification({ message, type });
+
+    setTimeout(() => {
+      setNotification({ message: "", type: "" });
+    }, 3000);
+  };
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -54,7 +66,7 @@ function Register() {
       };
       const response = await registerUser(encryptedFormData);
 
-      toast.success("Registration successful!");
+      showNotification("Registration successful!","success");
 
       setFormData({
         name: "",
@@ -66,7 +78,7 @@ function Register() {
         navigate("/login");
       }, 1000);
     } catch (error) {
-      toast.error(error.detail || "Registration Failed");
+      showNotification(error.detail || "Registration Failed","error");
     } finally {
       setLoading(false);
     }
@@ -151,6 +163,11 @@ function Register() {
           </p>
         </div>
       </div>
+      <Notification
+        message={notification.message}
+        type={notification.type}
+        onClose={() => setNotification({ message: "", type: "" })}
+      />
     </div>
   );
 }

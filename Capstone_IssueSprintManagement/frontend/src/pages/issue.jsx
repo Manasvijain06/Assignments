@@ -3,6 +3,8 @@ import React, { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import IssueList from "../components/issues/IssueList";
 import IssueDetail from "../components/issues/IssueDetail";
+import Notification from "../components/Notification";
+
 import {
     createIssue,
     getProjectIssues,
@@ -11,7 +13,6 @@ import {
     updateIssueStatus,
     getProjectStories
 } from "../services/auth-service";
-import { toast } from "react-toastify";
 
 function Issue() {
     const user = JSON.parse(localStorage.getItem("user"));
@@ -28,6 +29,19 @@ function Issue() {
 
     const [stories, setStories] = useState([]);
     const [selectedIssue, setSelectedIssue] = useState(null);
+
+    const [notification, setNotification] = useState({
+        message: "",
+        type: "",
+    });
+
+    const showNotification = (message, type = "success") => {
+        setNotification({ message, type });
+
+        setTimeout(() => {
+            setNotification({ message: "", type: "" });
+        }, 3000);
+    };
 
     const [filters, setFilters] = useState({
         status: "all",
@@ -75,7 +89,7 @@ function Issue() {
                 loadStories(data[0].project_id);
             }
         } catch (error) {
-            toast.error(error.detail || "Failed to load projects.");
+            showNotification(error.detail || "Failed to load projects.", "error");
         }
     };
 
@@ -86,7 +100,7 @@ function Issue() {
 
             setMembers([...membersData, ...viewersData]);
         } catch (error) {
-            toast.error(error.detail || "Failed to load users.");
+            showNotification(error.detail || "Failed to load users.", "error");
         }
     };
 
@@ -104,7 +118,7 @@ function Issue() {
             setIssues(response.items);
             setTotalPages(response.total_pages);
         } catch (error) {
-            toast.error(error.detail || "Failed to load issues.");
+            showNotification(error.detail || "Failed to load issues.", "error");
         }
     };
 
@@ -128,7 +142,7 @@ function Issue() {
                 parent_id: issueData.parent_id || null,
             });
 
-            toast.success("Issue created successfully.");
+            showNotification("Issue created successfully.", "success");
             setShowCreateModal(false);
 
             setIssueData({
@@ -142,30 +156,17 @@ function Issue() {
 
             await loadIssues();
         } catch (error) {
-            toast.error(error.detail || "Issue creation failed.");
+            showNotification(error.detail || "Issue creation failed.", "error");
         }
     };
 
-    const handleStatusChange = async (issue, newStatus) => {
-        try {
-            await updateIssueStatus(issue.issue_id, {
-                status: newStatus,
-                updated_by: user.user_id,
-            });
-
-            toast.success("Issue status updated successfully.");
-            await loadIssues();
-        } catch (error) {
-            toast.error(error.detail || "Status update failed.");
-        }
-    };
 
     const loadStories = async (projectId) => {
         try {
             const data = await getProjectStories(projectId);
             setStories(data);
         } catch (error) {
-            toast.error(error.detail || "Failed to load stories.");
+            showNotification(error.detail || "Failed to load stories.", "error");
         }
     };
 
@@ -216,7 +217,7 @@ function Issue() {
                 updated_by: user.user_id,
             });
 
-            toast.success("Issue status updated successfully.");
+            showNotification("Issue status updated successfully.", "success");
 
             setSelectedIssue({
                 ...selectedIssue,
@@ -225,7 +226,7 @@ function Issue() {
 
             await loadIssues();
         } catch (error) {
-            toast.error(error.detail || "Status update failed.");
+            showNotification(error.detail || "Status update failed.", "error");
         }
     };
 
@@ -266,7 +267,11 @@ function Issue() {
                     />
                 )}
             </main>
-
+            <Notification
+                message={notification.message}
+                type={notification.type}
+                onClose={() => setNotification({ message: "", type: "" })}
+            />
         </div>
     );
 }

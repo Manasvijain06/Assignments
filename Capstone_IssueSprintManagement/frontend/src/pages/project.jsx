@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import ProjectList from "../components/projects/ProjectList";
 import ProjectDetail from "../components/projects/ProjectDetail";
-
+import Notification from "../components/Notification";
 import {
   getProjects,
   createProject,
@@ -11,10 +11,18 @@ import {
   getUsersByRole,
   addMemberToProject,
   removeMemberFromProject,
+  getProjectIssues,
+  getSprints,
 } from "../services/auth-service";
-import { toast } from "react-toastify";
 
 function Project() {
+
+  const [dashboardStats, setDashboardStats] = useState({
+    totalIssues: 0,
+    openIssues: 0,
+    closedIssues: 0,
+    activeSprints: 0,
+  });
   const user = JSON.parse(localStorage.getItem("user"));
   const isAdmin = user?.role === "admin";
 
@@ -32,6 +40,19 @@ function Project() {
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [projectToDelete, setProjectToDelete] = useState(null);
+
+  const [notification, setNotification] = useState({
+    message: "",
+    type: "",
+  });
+
+  const showNotification = (message, type = "success") => {
+    setNotification({ message, type });
+
+    setTimeout(() => {
+      setNotification({ message: "", type: "" });
+    }, 3000);
+  };
 
   const [projectData, setProjectData] = useState({
     name: "",
@@ -62,12 +83,12 @@ function Project() {
   const loadProjects = async () => {
     try {
       const data = await getProjects();
-      console.log("Projects from API:", data);
+      const filteredProjects = getFilteredProjects(data);
 
       setProjects(getFilteredProjects(data));
+      await loadDashboardStats(filteredProjects);
     } catch (error) {
-      console.log("Project load error:", error);
-      toast.error(error.detail || "Failed to load projects.");
+      showNotification(error.detail || "Failed to load projects.","error");
     }
   };
 
@@ -77,7 +98,7 @@ function Project() {
       const viewers = await getUsersByRole("viewer");
       setAvailableMembers([...members, ...viewers]);
     } catch (error) {
-      toast.error(error.detail || "Failed to load users.");
+      showNotification(error.detail || "Failed to load users.","error");
     }
   };
 
@@ -109,7 +130,7 @@ function Project() {
     try {
       await createProject(user.user_id, projectData);
 
-      toast.success("Project created successfully!");
+      showNotification("Project created successfully!","success");
       setShowCreateModal(false);
 
       setProjectData({
@@ -121,7 +142,7 @@ function Project() {
 
       await loadProjects();
     } catch (error) {
-      toast.error(error.detail || "Project creation failed.");
+      showNotification(error.detail || "Project creation failed.","error");
     }
   };
 
@@ -162,16 +183,16 @@ function Project() {
       setShowEditModal(false);
 
       if (descriptionUpdated || memberAdded || memberRemoved) {
-        toast.success("Project updated successfully.");
+        showNotification("Project updated successfully.", "success");
       } else {
-        toast.success("No changes made.");
+        showNotification("No changes made.","success");
       }
 
       setMemberAdded(false);
       setMemberRemoved(false);
       setDescriptionUpdated(false);
     } catch (error) {
-      toast.error(error.detail || "Project update failed.");
+      showNotification(error.detail || "Project update failed.","error");
     }
   };
 
@@ -180,14 +201,14 @@ function Project() {
 
     try {
       const response = await deleteProject(projectToDelete.project_id);
-      toast.success(response.message || "Project deleted successfully.");
+      showNotification(response.message || "Project deleted successfully.","success");
 
       setShowDeleteModal(false);
       setProjectToDelete(null);
 
       await loadProjects();
     } catch (error) {
-      toast.error(error.detail || "Project deletion failed.");
+      showNotification(error.detail || "Project deletion failed.","error");
     }
   };
 
@@ -205,7 +226,7 @@ function Project() {
 
       await refreshSelectedProject(selectedProject.project_id);
     } catch (error) {
-      toast.error(error.detail || "Add member failed.");
+      showNotification(error.detail || "Add member failed.","error");
     }
   };
 
@@ -220,10 +241,61 @@ function Project() {
 
       await refreshSelectedProject(selectedProject.project_id);
     } catch (error) {
-      toast.error(error.detail || "Remove member failed.");
+      showNotification(error.detail || "Remove member failed.","error");
     }
   };
 
+  const loadDashboardStats = async (projectList) => {
+    try {
+      let totalIssues = 0;
+      let openIssues = 0;
+      let closedIssues = 0;
+      let activeSprints = 0;
+
+      for (const project of projectList) {
+        const issueResponse = await getProjectIssues(project.project_id, {
+          page: 1,
+          limit: 50,
+          status: "all",
+          priority: "all",
+          assignee: "all",
+          search: "",
+        });
+
+        const allIssues = issueResponse.items.flatMap((issue) => [
+          issue,
+          ...(issue.children || []),
+        ]);
+
+        totalIssues += allIssues.length;
+        closedIssues += allIssues.filter(
+          (issue) => issue.status === "done",
+        ).length;
+        openIssues += allIssues.filter(
+          (issue) => issue.status !== "done",
+        ).length;
+      }
+
+      const sprintResponse = await getSprints({
+        page: 1,
+        limit: 50,
+        project_id: "all",
+        status: "active",
+        search: "",
+      });
+
+      activeSprints = sprintResponse.items.length;
+
+      setDashboardStats({
+        totalIssues,
+        openIssues,
+        closedIssues,
+        activeSprints,
+      });
+    } catch (error) {
+      showNotification(error.detail || "Failed to load dashboard stats.","error");
+    }
+  };
   return (
     <div className="dashboard-layout">
       <Sidebar />
@@ -266,6 +338,11 @@ function Project() {
           />
         )}
       </main>
+      <Notification
+        message={notification.message}
+        type={notification.type}
+        onClose={() => setNotification({ message: "", type: "" })}
+      />
     </div>
   );
 }

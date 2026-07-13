@@ -2,7 +2,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.exceptions.handlers import register_exception_handlers
-from app.router import auth, admin, project, issue
+from app.router import auth, admin, project, issue, sprint
 from app.database.mongodb import connect_db, close_db
 
 
@@ -40,6 +40,7 @@ app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 app.include_router(admin.router, prefix="/users", tags=["Role Checks"])
 app.include_router(project.router, prefix="/projects", tags=["Projects"])
 app.include_router(issue.router, prefix="/projects", tags=["Issues"])
+app.include_router(sprint.router, prefix="/sprints", tags=["Sprints"])
 
 @app.get("/")
 def root():
