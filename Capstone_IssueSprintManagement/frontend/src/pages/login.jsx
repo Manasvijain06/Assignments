@@ -51,8 +51,12 @@ function Login() {
     setLoading(true);
 
     try {
-      const response = await loginUser(formData);
+      const encodedData = {
+        ...formData,
+        password: btoa(formData.password),
+      };
 
+      const response = await loginUser(encodedData);
       localStorage.setItem("user", JSON.stringify(response));
       navigate("/projects");
     } catch (error) {

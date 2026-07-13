@@ -18,22 +18,62 @@ function SprintList({
     sprintData,
     setSprintData,
     handleCreateSprint,
+    errors,
+    setErrors,
 }) {
     const handleSprintDataChange = (fieldName, value) => {
       setSprintData((prev) => ({
         ...prev,
         [fieldName]: value,
       }));
-    };
+
+    setErrors((prev) => ({
+    ...prev,
+    [fieldName]: "",
+  }));
+};
 
     const openCreateModal = () => {
-      setSprintData((prev) => ({
-        ...prev,
-        project_id: prev.project_id || projects[0]?.project_id || "",
-      }));
+  setSprintData({
+    name: "",
+    project_id:
+      selectedProjectId !== "all"
+        ? selectedProjectId
+        : projects[0]?.project_id || "",
+    start_date: "",
+    end_date: "",
+  });
 
-      setShowCreateModal(true);
-    };
+  setErrors({
+    name: "",
+    project_id: "",
+    start_date: "",
+    end_date: "",
+  });
+
+  setShowCreateModal(true);
+};
+
+const closeCreateModal = () => {
+  setShowCreateModal(false);
+
+  setSprintData({
+    name: "",
+    project_id:
+      selectedProjectId !== "all"
+        ? selectedProjectId
+        : projects[0]?.project_id || "",
+    start_date: "",
+    end_date: "",
+  });
+
+  setErrors({
+    name: "",
+    project_id: "",
+    start_date: "",
+    end_date: "",
+  });
+};
 
     return (
       <>
@@ -197,7 +237,7 @@ function SprintList({
                 <button
                   type="button"
                   className="modal-close"
-                  onClick={() => setShowCreateModal(false)}
+                  onClick={closeCreateModal}
                 >
                   ×
                 </button>
@@ -208,18 +248,19 @@ function SprintList({
                 <select
                   value={sprintData.project_id}
                   onChange={(e) =>
-                    setSprintData({
-                      ...sprintData,
-                      project_id: e.target.value,
-                    })
+                    handleSprintDataChange("project_id", e.target.value)
                   }
                 >
+                  <option value="">Select Project</option>
                   {projects.map((project) => (
                     <option key={project.project_id} value={project.project_id}>
                       {project.name}
                     </option>
                   ))}
                 </select>
+                {errors.project_id && (
+                  <p className="error">{errors.project_id}</p>
+                )}
 
                 <label>Sprint Name</label>
                 <input
@@ -230,6 +271,8 @@ function SprintList({
                   placeholder="Sprint 1"
                 />
 
+                {errors.name && <p className="error">{errors.name}</p>}
+
                 <label>Start Date</label>
                 <input
                   type="date"
@@ -239,6 +282,10 @@ function SprintList({
                   }
                 />
 
+                {errors.start_date && (
+                  <p className="error">{errors.start_date}</p>
+                )}
+
                 <label>End Date</label>
                 <input
                   type="date"
@@ -247,6 +294,7 @@ function SprintList({
                     handleSprintDataChange("end_date", e.target.value)
                   }
                 />
+                {errors.end_date && <p className="error">{errors.end_date}</p>}
 
                 <div className="modal-actions">
                   <button type="submit" className="modal-create-btn">
@@ -256,7 +304,7 @@ function SprintList({
                   <button
                     type="button"
                     className="modal-cancel-btn"
-                    onClick={() => setShowCreateModal(false)}
+                    onClick={closeCreateModal}
                   >
                     Cancel
                   </button>

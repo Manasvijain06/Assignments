@@ -8,11 +8,13 @@ from app.exceptions.project_exceptions import (
     ProjectNotFoundException,
     MemberAlreadyAssignedException,
     MemberNotAssignedException,
+    ActiveSprintExistsException,
 )
 from app.exceptions.user_exceptions import (
     UserNotFoundException,
     AdminAccessRequiredException,
 )
+from app.repositories.sprint_repository import SprintRepository
 from app.repositories.project_repository import ProjectRepository
 from app.repositories.user_repository import UserRepository
 from app.models.project_model import ProjectModel
@@ -26,6 +28,7 @@ class ProjectService:
     def __init__(self, db):
         self.project_repository = ProjectRepository(db)
         self.user_repository = UserRepository(db)
+        self.sprint_repository = SprintRepository(db)
 
     def _get_object_id(self, object_id: str):
         """
@@ -160,6 +163,13 @@ class ProjectService:
 
         if not project:
             raise ProjectNotFoundException()
+
+        active_sprint = (
+            self.sprint_repository.find_active_sprint_by_project(project_object_id)
+        )
+
+        if active_sprint:
+            raise ActiveSprintExistsException()
 
         self.project_repository.delete_project(project_object_id)
 

@@ -48,6 +48,13 @@ function Sprint() {
         type: "",
     });
 
+    const [errors, setErrors] = useState({
+      name: "",
+      project_id: "",
+      start_date: "",
+      end_date: "",
+    });
+
     useEffect(() => {
        loadProjects();
     }, []);
@@ -65,18 +72,18 @@ function Sprint() {
     };
 
     const getErrorMessage = (error, fallback) => {
-      if (Array.isArray(error.detail)) {
-        return error.detail[0]?.msg || fallback;
-      }
+        if (Array.isArray(error.detail)) {
+            return error.detail[0]?.msg || fallback;
+        }
 
-      return error.detail || fallback;
+        return error.detail || fallback;
     };
 
     const loadProjects = async () => {
-      try {
-        const response = await getProjects({
-          page: 1,
-          limit: 50,
+        try {
+            const response = await getProjects({
+            page: 1,
+            limit: 50,
         });
 
         const projectItems = response.items || [];
@@ -225,10 +232,49 @@ function Sprint() {
     const handleCreateSprint = async (e) => {
         e.preventDefault();
 
+        const newErrors = {
+          name: "",
+          project_id: "",
+          start_date: "",
+          end_date: "",
+        };
+
+        if (!sprintData.name.trim()) {
+            newErrors.name = "Sprint Name is required.";
+        }
+
+        if (!sprintData.project_id || sprintData.project_id === "all") {
+            newErrors.project_id = "Please select a project.";
+        }
+
+        if (!sprintData.start_date.trim()) {
+            newErrors.start_date = "Start Date is required.";
+        }
+
+        if (!sprintData.end_date.trim()) {
+            newErrors.end_date = "End date is required.";
+        }
+
         if (sprintData.start_date > sprintData.end_date) {
             showNotification("Start date cannot be greater than end date.", "error");
             return;
         }
+
+         const hasErrors = Object.values(newErrors).some(
+           (message) => message !== "",
+         );
+
+         if (hasErrors) {
+           setErrors(newErrors);
+           return;
+         }
+
+         setErrors({
+           name: "",
+           project_id: "",
+           start_date: "",
+           end_date: "",
+         });
 
         try {
             await createSprint({
@@ -307,53 +353,55 @@ function Sprint() {
     };
 
     return (
-        <div className="dashboard-layout">
-            <Sidebar />
+      <div className="dashboard-layout">
+        <Sidebar />
 
-            <main className="dashboard-main">
-                {!selectedSprint ? (
-                    <SprintList
-                        user={user}
-                        projects={projects}
-                        sprints={sprints}
-                        selectedProjectId={selectedProjectId}
-                        setSelectedProjectId={setSelectedProjectId}
-                        statusFilter={statusFilter}
-                        setStatusFilter={setStatusFilter}
-                        search={search}
-                        setSearch={setSearch}
-                        page={page}
-                        setPage={setPage}
-                        totalPages={totalPages}
-                        setSelectedSprint={setSelectedSprint}
-                        loadAvailableIssues={loadAvailableIssues}
-                        showCreateModal={showCreateModal}
-                        setShowCreateModal={setShowCreateModal}
-                        sprintData={sprintData}
-                        setSprintData={setSprintData}
-                        handleCreateSprint={handleCreateSprint}
-                    />
-                ) : (
-                    <SprintDetail
-                        user={user}
-                        selectedSprint={selectedSprint}
-                        setSelectedSprint={setSelectedSprint}
-                        availableIssues={availableIssues}
-                        selectedIssueId={selectedIssueId}
-                        setSelectedIssueId={setSelectedIssueId}
-                        handleAddIssueToSprint={handleAddIssueToSprint}
-                        handleStartSprint={handleStartSprint}
-                        handleCompleteSprint={handleCompleteSprint}
-                        handleRemoveIssueFromSprint={handleRemoveIssueFromSprint}
-                    />
-                )}
-            </main>
-            <Notification
-                message={notification.message}
-                type={notification.type}
-                onClose={() => setNotification({ message: "", type: "" })}
+        <main className="dashboard-main">
+          {!selectedSprint ? (
+            <SprintList
+              user={user}
+              projects={projects}
+              sprints={sprints}
+              selectedProjectId={selectedProjectId}
+              setSelectedProjectId={setSelectedProjectId}
+              statusFilter={statusFilter}
+              setStatusFilter={setStatusFilter}
+              search={search}
+              setSearch={setSearch}
+              page={page}
+              setPage={setPage}
+              totalPages={totalPages}
+              setSelectedSprint={setSelectedSprint}
+              loadAvailableIssues={loadAvailableIssues}
+              showCreateModal={showCreateModal}
+              setShowCreateModal={setShowCreateModal}
+              sprintData={sprintData}
+              setSprintData={setSprintData}
+              handleCreateSprint={handleCreateSprint}
+              errors={errors}
+              setErrors={setErrors}
             />
-        </div>
+          ) : (
+            <SprintDetail
+              user={user}
+              selectedSprint={selectedSprint}
+              setSelectedSprint={setSelectedSprint}
+              availableIssues={availableIssues}
+              selectedIssueId={selectedIssueId}
+              setSelectedIssueId={setSelectedIssueId}
+              handleAddIssueToSprint={handleAddIssueToSprint}
+              handleStartSprint={handleStartSprint}
+              handleCompleteSprint={handleCompleteSprint}
+              handleRemoveIssueFromSprint={handleRemoveIssueFromSprint}
+            />
+          )}
+        </main>
+        <Notification
+          message={notification.message}
+          type={notification.type}
+          onClose={() => setNotification({ message: "", type: "" })}
+        />
+      </div>
     );
 }
 
