@@ -7,6 +7,7 @@ from app.exceptions.user_exceptions import (
     UserAlreadyExistsException,
     InvalidPasswordEncodingException,
     InvalidCredentialsException,
+    SamePasswordException,
 )
 
 from app.exceptions.project_exceptions import (
@@ -14,6 +15,7 @@ from app.exceptions.project_exceptions import (
     MemberNotAssignedException,
     ProjectAlreadyExistsException,
     ProjectNotFoundException,
+    ActiveSprintExistsException,
 )
 
 from app.exceptions.issue_exceptions import (
@@ -196,5 +198,22 @@ def register_exception_handlers(app: FastAPI):
     ):
         return JSONResponse(
             status_code=403,
+            content={"detail": exc.message},
+        )
+
+    @app.exception_handler(SamePasswordException)
+    def same_password_handler(
+        request: Request,
+        exc: SamePasswordException,
+    ):
+        return JSONResponse(
+            status_code=400,
+            content={"detail": exc.message},
+        )
+
+    @app.exception_handler(ActiveSprintExistsException)
+    async def active_sprint_exists_handler(request, exc):
+        return JSONResponse(
+            status_code=409,
             content={"detail": exc.message},
         )

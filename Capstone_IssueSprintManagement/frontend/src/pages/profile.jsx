@@ -40,32 +40,37 @@ function Profile() {
       }));
     };
 
-     const handleUpdateProfile = async () => {
-       if (!name.trim()) {
-         showNotification("Name is required.", "error");
-         return;
-       }
+      const handleUpdateProfile = async () => {
+        if (!name.trim()) {
+          showNotification("Name is required.", "error");
+          return;
+        }
 
-       if (name.trim().length < 2) {
-         showNotification("Name must be at least 2 characters long.", "error");
-         return;
-       }
+        if (name.trim().length < 2) {
+          showNotification("Name must be at least 2 characters long.", "error");
+          return;
+        }
 
-       try {
-         const response = await updateProfile(user.user_id, {
-           name: name.trim(),
-         });
+        try {
+          const response = await updateProfile(user.user_id, {
+            name: name.trim(),
+          });
 
-         localStorage.setItem("user", JSON.stringify(response.user));
-         setUser(response.user);
-         setName(response.user.name);
-         setIsEditing(false);
+          const updatedUser = {
+            ...user,
+            ...response.user,
+          };
 
-         showNotification("Profile updated successfully.", "success");
-       } catch (error) {
-         showNotification(error.detail || "Profile update failed.", "error");
-       }
-     };
+          localStorage.setItem("user", JSON.stringify(updatedUser));
+          setUser(updatedUser);
+          setName(updatedUser.name);
+          setIsEditing(false);
+
+          showNotification("Profile updated successfully.", "success");
+        } catch (error) {
+          showNotification(error.detail || "Profile update failed.", "error");
+        }
+      };
 
     const handleChangePassword = async () => {
       if (!passwordData.current_password) {
@@ -85,10 +90,19 @@ function Profile() {
         );
         return;
       }
+        if (passwordData.current_password === passwordData.new_password) {
+          showNotification(
+            "New password must be different from current password.",
+            "error",
+          );
+          return;
+        }
 
       try {
-        await changePassword(user.user_id, passwordData);
-
+        await changePassword(user.user_id, {
+          current_password: btoa(passwordData.current_password),
+          new_password: btoa(passwordData.new_password),
+        });
         setPasswordData(initialPasswordData);
         setShowCurrentPassword(false);
         setShowNewPassword(false);
@@ -145,7 +159,7 @@ function Profile() {
               </section>
             </div>
           ) : (
-            <div className="project-overview-grid">
+            <div className="profil-card-grid">
               <div className="overview-card">
                 <h3>Edit Profile</h3>
 

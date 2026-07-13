@@ -18,8 +18,18 @@ class ProjectRepository:
     def find_by_key(self, project_key: str):
         return self.collection.find_one({"project_key": project_key.upper()})
 
-    def get_all_projects(self):
-        return self.collection.find()
+    def get_all_projects(self, page: int, limit: int):
+        skip = (page - 1) * limit
+
+        return(
+            self.collection
+            .find({})
+            .skip(skip)
+            .limit(limit)
+        )
+
+    def count_projects(self):
+        return self.collection.count_documents({})
 
     def update_description(self, project_id: ObjectId, description: str):
         return self.collection.update_one(

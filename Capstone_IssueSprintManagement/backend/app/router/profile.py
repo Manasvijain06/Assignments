@@ -1,6 +1,8 @@
 from bson import ObjectId
 from bson.errors import InvalidId
 from fastapi import APIRouter, Depends, HTTPException
+from app.dependencies.authentication import get_current_user
+
 
 from app.constants.collections import USERS_COLLECTION
 from app.dependencies.database import get_db
@@ -9,7 +11,7 @@ from app.schemas.requests.profile_request import (
     ChangePasswordRequest,
 )
 from app.utils.security import hash_password, verify_password
-
+from app.services.user_service import UserService
 router = APIRouter()
 
 
@@ -24,7 +26,7 @@ def get_user_object_id(user_id: str):
 
 
 @router.put("/{user_id}")
-def update_profile(user_id: str, request: UpdateProfileRequest, db=Depends(get_db)):
+def update_profile(user_id: str, request: UpdateProfileRequest, current_user: dict = Depends(get_current_user), db=Depends(get_db)):
     """
     Update user profile.
     """
@@ -53,24 +55,15 @@ def update_profile(user_id: str, request: UpdateProfileRequest, db=Depends(get_d
 
 
 @router.put("/{user_id}/password")
-def change_password(user_id: str, request: ChangePasswordRequest, db=Depends(get_db)):
+def change_password(user_id: str, request: ChangePasswordRequest, current_user: dict = Depends(get_current_user), db=Depends(get_db)):
     """
     Change user password.
     """
-    user_object_id = get_user_object_id(user_id)
-    users_collection = db[USERS_COLLECTION]
+    user_service = UserService(db)
 
-    user = users_collection.find_one({"_id": user_object_id})
-
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    if not verify_password(request.current_password, user["password"]):
-        raise HTTPException(status_code=400, detail="Current password is incorrect")
-
-    users_collection.update_one(
-        {"_id": user_object_id},
-        {"$set": {"password": hash_password(request.new_password)}},
+    user_service.change_password(
+        user_id,
+        request,
     )
 
     return {"message": "Password changed successfully."}

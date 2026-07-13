@@ -1,7 +1,10 @@
 from unittest.mock import patch
 
+import pytest
+from bson import ObjectId
 from fastapi.testclient import TestClient
 
+from app.dependencies.authentication import get_current_user
 from app.dependencies.database import get_db
 from app.exceptions.issue_exceptions import (
     CommentNotFoundException,
@@ -9,14 +12,40 @@ from app.exceptions.issue_exceptions import (
 )
 from main import app
 
+
+ADMIN_ID = "507f1f77bcf86cd799439012"
+MEMBER_ID = "507f1f77bcf86cd799439013"
+ISSUE_ID = "507f1f77bcf86cd799439011"
+PROJECT_ID = "507f1f77bcf86cd799439010"
+
 client = TestClient(app)
 
 
 def override_get_db():
+    """
+    Return a mock database for router tests.
+    """
     return {}
 
 
-app.dependency_overrides[get_db] = override_get_db
+def override_admin_user():
+    return {
+        "_id": ObjectId(ADMIN_ID),
+        "name": "Admin User",
+        "email": "admin@gmail.com",
+        "role": "admin",
+    }
+
+
+@pytest.fixture(autouse=True)
+def override_dependencies():
+    app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_current_user] = override_admin_user
+
+    yield
+
+    app.dependency_overrides.pop(get_db, None)
+    app.dependency_overrides.pop(get_current_user, None)
 
 
 @patch("app.router.issue.IssueService")
@@ -24,9 +53,9 @@ def test_add_comment_success(mock_issue_service):
     mock_issue_service.return_value.add_comment.return_value = None
 
     response = client.post(
-        "/projects/issues/507f1f77bcf86cd799439011/comments",
+        f"/projects/issues/{ISSUE_ID}/comments",
         json={
-            "user_id": "507f1f77bcf86cd799439012",
+            "user_id": ADMIN_ID,
             "comment": "This issue needs to be fixed.",
         },
     )
@@ -40,9 +69,9 @@ def test_edit_comment_success(mock_issue_service):
     mock_issue_service.return_value.update_comment.return_value = None
 
     response = client.put(
-        "/projects/issues/507f1f77bcf86cd799439011/comments/comment-1",
+        f"/projects/issues/{ISSUE_ID}/comments/comment-1",
         json={
-            "user_id": "507f1f77bcf86cd799439012",
+            "user_id": ADMIN_ID,
             "comment": "Updated comment text.",
         },
     )
@@ -56,8 +85,10 @@ def test_delete_comment_success(mock_issue_service):
     mock_issue_service.return_value.delete_comment.return_value = None
 
     response = client.delete(
-        "/projects/issues/507f1f77bcf86cd799439011/comments/comment-1",
-        params={"user_id": "507f1f77bcf86cd799439012"},
+        f"/projects/issues/{ISSUE_ID}/comments/comment-1",
+        params={
+            "user_id": ADMIN_ID,
+        },
     )
 
     assert response.status_code == 200
@@ -71,9 +102,9 @@ def test_edit_comment_not_found(mock_issue_service):
     )
 
     response = client.put(
-        "/projects/issues/507f1f77bcf86cd799439011/comments/comment-1",
+        f"/projects/issues/{ISSUE_ID}/comments/comment-1",
         json={
-            "user_id": "507f1f77bcf86cd799439012",
+            "user_id": ADMIN_ID,
             "comment": "Updated comment text.",
         },
     )
@@ -89,8 +120,10 @@ def test_delete_comment_permission_denied(mock_issue_service):
     )
 
     response = client.delete(
-        "/projects/issues/507f1f77bcf86cd799439011/comments/comment-1",
-        params={"user_id": "507f1f77bcf86cd799439013"},
+        f"/projects/issues/{ISSUE_ID}/comments/comment-1",
+        params={
+            "user_id": MEMBER_ID,
+        },
     )
 
     assert response.status_code == 403
@@ -104,7 +137,7 @@ def test_search_results_accuracy(mock_issue_service):
     mock_issue_service.return_value.get_project_issues.return_value = {
         "items": [
             {
-                "issue_id": "507f1f77bcf86cd799439011",
+                "issue_id": ISSUE_ID,
                 "issue_key": "SPR1-1",
                 "title": "Login bug",
                 "description": "Login button is not working",
@@ -125,7 +158,7 @@ def test_search_results_accuracy(mock_issue_service):
     }
 
     response = client.get(
-        "/projects/507f1f77bcf86cd799439010/issues",
+        f"/projects/{PROJECT_ID}/issues",
         params={
             "search": "Login",
             "page": 1,
@@ -134,6 +167,9 @@ def test_search_results_accuracy(mock_issue_service):
     )
 
     assert response.status_code == 200
-    assert response.json()["total"] == 1
-    assert response.json()["items"][0]["title"] == "Login bug"
-    assert response.json()["items"][0]["issue_key"] == "SPR1-1"
+
+    data = response.json()
+
+    assert data["total"] == 1
+    assert data["items"][0]["title"] == "Login bug"
+    assert data["items"][0]["issue_key"] == "SPR1-1"

@@ -15,3 +15,6 @@ class MemberAlreadyAssignedException(BaseAppException):
 
 class MemberNotAssignedException(BaseAppException):
     default_message = "Member is not assigned to project"
+
+class ActiveSprintExistsException(BaseAppException):
+    default_message = "Project cannot be deleted while an active sprint exists."

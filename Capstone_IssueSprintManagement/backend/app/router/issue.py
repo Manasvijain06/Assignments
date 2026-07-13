@@ -1,7 +1,8 @@
 from typing import List
 
 from fastapi import APIRouter, Depends, Query
-
+from app.dependencies.authentication import get_current_user
+from app.dependencies.authorization import RoleChecker
 from app.dependencies.database import get_db
 from app.schemas.requests.issue_request import (
     CreateCommentRequest,
@@ -20,9 +21,15 @@ from app.services.issue_service import IssueService
 
 router = APIRouter()
 
+admin_or_member_required = RoleChecker(["admin", "member"])
 
 @router.post("/{project_id}/issues", response_model=CreateIssueResponse)
-def create_issue(project_id: str, issue: CreateIssueRequest, db=Depends(get_db)):
+def create_issue(
+    project_id: str,
+    issue: CreateIssueRequest,
+    _current_user: dict = Depends(admin_or_member_required),
+    db=Depends(get_db)
+    ):
     """
     Create a new issue inside a project.
     """
@@ -44,6 +51,7 @@ def get_project_issues(
     priority: str | None = Query(None),
     assignee: str | None = Query(None),
     search: str | None = Query(None),
+    current_user: dict = Depends(get_current_user),
     db=Depends(get_db),
 ):
     """
@@ -63,18 +71,27 @@ def get_project_issues(
 
 
 @router.patch("/issues/{issue_id}/status", response_model=UpdateIssueStatusResponse)
-def update_issue_status(issue_id: str, request: UpdateIssueStatusRequest, db=Depends(get_db)):
+def update_issue_status(
+    issue_id: str,
+    request: UpdateIssueStatusRequest,
+    current_user: dict = Depends(admin_or_member_required),
+    db=Depends(get_db)
+):
     """
     Update issue status.
     """
 
     issue_service = IssueService(db)
-    issue_service.update_issue_status(issue_id, request)
+    issue_service.update_issue_status(issue_id, request, current_user)
 
     return {"message": "Issue status updated successfully."}
 
 @router.get("/{project_id}/stories",response_model=List[StoryOptionResponse],)
-def get_project_stories(project_id: str, db=Depends(get_db)):
+def get_project_stories(
+    project_id: str,
+    current_user: dict = Depends(get_current_user),
+    db=Depends(get_db)
+):
     """
     Fetch story issues for project.
     """
@@ -85,7 +102,12 @@ def get_project_stories(project_id: str, db=Depends(get_db)):
 
 
 @router.post("/issues/{issue_id}/comments", response_model=CommentResponse)
-def add_comment(issue_id: str, request: CreateCommentRequest, db=Depends(get_db)):
+def add_comment(
+    issue_id: str,
+    request: CreateCommentRequest,
+    current_user: dict = Depends(admin_or_member_required),
+    db=Depends(get_db)
+):
     """
     Add own comment.
     """
@@ -102,6 +124,7 @@ def update_comment(
     issue_id: str,
     comment_id: str,
     request: UpdateCommentRequest,
+    current_user: dict = Depends(admin_or_member_required),
     db=Depends(get_db),
 ):
     """
@@ -120,6 +143,7 @@ def delete_comment(
     issue_id: str,
     comment_id: str,
     user_id: str,
+    current_user: dict = Depends(admin_or_member_required),
     db=Depends(get_db),
 ):
     """

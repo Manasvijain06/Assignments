@@ -1,7 +1,10 @@
 from unittest.mock import patch
 
+import pytest
+from bson import ObjectId
 from fastapi.testclient import TestClient
 
+from app.dependencies.authentication import get_current_user
 from app.dependencies.database import get_db
 from app.exceptions.issue_exceptions import (
     AssigneeRequiredException,
@@ -12,6 +15,11 @@ from app.exceptions.issue_exceptions import (
 from app.exceptions.project_exceptions import ProjectNotFoundException
 from main import app
 
+
+ADMIN_ID = "507f1f77bcf86cd799439012"
+MEMBER_ID = "507f1f77bcf86cd799439013"
+ISSUE_ID = "507f1f77bcf86cd799439011"
+
 client = TestClient(app)
 
 
@@ -19,7 +27,24 @@ def override_get_db():
     return {}
 
 
-app.dependency_overrides[get_db] = override_get_db
+def override_admin_user():
+    return {
+        "_id": ObjectId(ADMIN_ID),
+        "name": "Admin User",
+        "email": "admin@gmail.com",
+        "role": "admin",
+    }
+
+
+@pytest.fixture(autouse=True)
+def override_dependencies():
+    app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_current_user] = override_admin_user
+
+    yield
+
+    app.dependency_overrides.pop(get_db, None)
+    app.dependency_overrides.pop(get_current_user, None)
 
 
 @patch("app.router.issue.IssueService")
@@ -29,14 +54,14 @@ def test_create_issue_project_not_found(mock_issue_service):
     )
 
     response = client.post(
-        "/projects/507f1f77bcf86cd799439011/issues",
+        f"/projects/{ISSUE_ID}/issues",
         json={
             "title": "Login bug",
             "description": "Login button not working",
             "type": "bug",
             "priority": "high",
-            "assignee": "507f1f77bcf86cd799439013",
-            "created_by": "507f1f77bcf86cd799439012",
+            "assignee": MEMBER_ID,
+            "created_by": ADMIN_ID,
             "parent_id": None,
         },
     )
@@ -47,10 +72,10 @@ def test_create_issue_project_not_found(mock_issue_service):
 
 def test_create_issue_invalid_status_value():
     response = client.patch(
-        "/projects/issues/507f1f77bcf86cd799439011/status",
+        f"/projects/issues/{ISSUE_ID}/status",
         json={
             "status": "closed",
-            "updated_by": "507f1f77bcf86cd799439012",
+            "updated_by": ADMIN_ID,
         },
     )
 
@@ -64,15 +89,18 @@ def test_invalid_issue_status_transition(mock_issue_service):
     )
 
     response = client.patch(
-        "/projects/issues/507f1f77bcf86cd799439011/status",
+        f"/projects/issues/{ISSUE_ID}/status",
         json={
             "status": "todo",
-            "updated_by": "507f1f77bcf86cd799439012",
+            "updated_by": ADMIN_ID,
         },
     )
 
     assert response.status_code == 409
-    assert response.json()["detail"] == "Invalid issue status transition"
+    assert (
+        response.json()["detail"]
+        == "Invalid issue status transition"
+    )
 
 
 @patch("app.router.issue.IssueService")
@@ -82,10 +110,10 @@ def test_non_assignee_cannot_update_status(mock_issue_service):
     )
 
     response = client.patch(
-        "/projects/issues/507f1f77bcf86cd799439011/status",
+        f"/projects/issues/{ISSUE_ID}/status",
         json={
             "status": "in_progress",
-            "updated_by": "507f1f77bcf86cd799439013",
+            "updated_by": MEMBER_ID,
         },
     )
 
@@ -102,10 +130,10 @@ def test_issue_not_found(mock_issue_service):
     )
 
     response = client.patch(
-        "/projects/issues/507f1f77bcf86cd799439011/status",
+        f"/projects/issues/{ISSUE_ID}/status",
         json={
             "status": "in_progress",
-            "updated_by": "507f1f77bcf86cd799439012",
+            "updated_by": ADMIN_ID,
         },
     )
 
@@ -120,9 +148,9 @@ def test_user_cannot_edit_other_user_comment(mock_issue_service):
     )
 
     response = client.put(
-        "/projects/issues/507f1f77bcf86cd799439011/comments/comment-1",
+        f"/projects/issues/{ISSUE_ID}/comments/comment-1",
         json={
-            "user_id": "507f1f77bcf86cd799439013",
+            "user_id": MEMBER_ID,
             "comment": "Updated comment",
         },
     )

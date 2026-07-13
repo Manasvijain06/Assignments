@@ -18,3 +18,6 @@ class UserNotFoundException(BaseAppException):
 
 class AdminAccessRequiredException(BaseAppException):
     default_message = "Admin access required"
+
+class SamePasswordException(BaseAppException):
+    default_message = "New password must be different from current password"

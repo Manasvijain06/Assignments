@@ -38,3 +38,13 @@ class UserRepository:
         return list(
             self.collection.find({"role": role})
         )
+
+
+    def update_password(self, user_id: str, hashed_password: str):
+        """
+        Update the user's password.
+        """
+        return self.collection.update_one(
+            {"_id": ObjectId(user_id)},
+            {"$set": {"password": hashed_password}},
+        )

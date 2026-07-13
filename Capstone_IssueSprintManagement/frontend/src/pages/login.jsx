@@ -51,13 +51,12 @@ function Login() {
     setLoading(true);
 
     try {
-      const encryptedFormData = {
+      const encodedData = {
         ...formData,
         password: btoa(formData.password),
       };
 
-      const response = await loginUser(encryptedFormData);
-
+      const response = await loginUser(encodedData);
       localStorage.setItem("user", JSON.stringify(response));
       navigate("/projects");
     } catch (error) {
@@ -93,7 +92,7 @@ function Login() {
           <form onSubmit={handleSubmit}>
             <label>Email</label>
             <input
-              type="email"
+              type="text"
               name="email"
               placeholder="Enter your email"
               value={formData.email}

@@ -92,3 +92,11 @@ class SprintRepository:
         return self.sprints_collection.find_one({
             "issues": issue_id
         })
+
+    def find_active_sprint_by_project(self, project_id: ObjectId):
+        return self.sprints_collection.find_one(
+            {
+                "project_id": project_id,
+                "status": "active",
+            }
+        )

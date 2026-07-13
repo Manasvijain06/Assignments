@@ -94,6 +94,7 @@ function IssueDetail({
               <h3>Comments</h3>
             </div>
 
+            {user?.role !== "viewer" && (
             <div className="comment-input-box">
               <textarea
                 placeholder="Write a comment..."
@@ -109,6 +110,7 @@ function IssueDetail({
                 Add Comment
               </button>
             </div>
+            )}
 
             <div className="comments-list">
               {comments.length > commentsPerPage && (

@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, Optional
 from pydantic import BaseModel, Field
 
 
@@ -11,9 +11,9 @@ class CreateIssueRequest(BaseModel):
     description: str = Field(..., min_length=3, max_length=500)
     type: Literal["task", "bug", "story"]
     priority: Literal["low", "medium", "high"]
-    assignee: str
+    assignee: Optional[str]
     created_by: str
-    parent_id: str | None = None
+    parent_id: Optional[str] | None = None
 
 class UpdateIssueStatusRequest(BaseModel):
     """

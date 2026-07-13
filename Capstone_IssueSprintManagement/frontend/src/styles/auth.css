@@ -29,30 +29,31 @@
 
 .password-container {
     position: relative;
-    width: 100%;
 }
 
 .password-container input {
     width: 100%;
     height: 40px;
-    padding-right: 44px;
+    padding-right: 65px;
     box-sizing: border-box;
 }
 
 .toggle-password {
     position: absolute;
     right: 14px;
-    top: 60%;
+    top: 50%;
     transform: translateY(-50%);
-    width: 22px;
-    height: 22px;
+
+    width: auto;
+    height: auto;
     padding: 0;
-    margin: 0;
+
     border: none;
     background: transparent;
-    color: #6b7280;
+    color: #616162;
     cursor: pointer;
-    font-size: 16px;
+    font-size: 13px;
+    line-height: 1;
 }
 
 .toggle-password:hover {
@@ -219,5 +220,171 @@
 
     .auth-right {
         padding: 38px 28px;
+    }
+}
+/* ---------- Responsive Layout ---------- */
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+.issue-table-card {
+    overflow-x: auto;
+}
+
+@media (max-width: 1024px) {
+
+    .dashboard-stats,
+    .dashboard-project-grid,
+    .project-overview-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .issue-toolbar {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .issue-detail-page {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .dashboard-layout {
+        display: block;
+        height: auto;
+        overflow: visible;
+    }
+
+    .dashboard-sidebar {
+        width: 100%;
+        height: auto;
+        min-width: 0;
+        position: static;
+        border-right: none;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .sidebar-menu {
+        flex-direction: row;
+        overflow-x: auto;
+    }
+
+    .sidebar-item {
+        flex-shrink: 0;
+        white-space: nowrap;
+    }
+
+    .dashboard-main,
+    .project-page-main {
+        height: auto;
+        min-height: 100vh;
+        padding: 20px 16px;
+        overflow: visible;
+    }
+
+    .dashboard-header,
+    .issue-header,
+    .project-detail-header,
+    .profile-card-header {
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .dashboard-stats,
+    .dashboard-project-grid,
+    .project-overview-grid,
+    .project-content,
+    .issue-toolbar {
+        grid-template-columns: 1fr;
+    }
+
+    .project-overview-grid .overview-card:nth-child(1),
+    .project-overview-grid .overview-card:nth-child(2),
+    .project-overview-grid .overview-card:nth-child(3) {
+        height: auto;
+    }
+
+    .project-title-box {
+        flex-wrap: wrap;
+    }
+
+    .issue-table {
+        min-width: 700px;
+    }
+
+    .edit-modal-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .project-modal,
+    .issue-modal,
+    .delete-modal,
+    .wide-modal {
+        width: calc(100vw - 32px);
+        max-width: calc(100vw - 32px);
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+}
+
+@media (max-width: 480px) {
+
+    .dashboard-header,
+    .issue-header,
+    .project-detail-header,
+    .profile-card-header,
+    .project-title-box,
+    .modal-actions,
+    .modal-member-action,
+    .profile-action-row,
+    .comment-top {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .dashboard-header button,
+    .new-project-btn,
+    .edit-project-btn,
+    .modal-actions button,
+    .modal-member-action button,
+    .profile-action-row button {
+        width: 100%;
+        margin-right: 0;
+    }
+
+    .dashboard-main,
+    .project-page-main {
+        padding: 16px 12px;
+    }
+
+    .dashboard-stats,
+    .dashboard-project-grid {
+        gap: 12px;
+    }
+
+    .issue-detail-main,
+    .issue-detail-sidebar,
+    .overview-card,
+    .dashboard-project-card {
+        padding: 16px;
+    }
+
+    .pagination {
+        flex-wrap: wrap;
+    }
+
+    .custom-toast {
+        left: 12px;
+        right: 12px;
+        min-width: 0;
+        max-width: none;
     }
 }

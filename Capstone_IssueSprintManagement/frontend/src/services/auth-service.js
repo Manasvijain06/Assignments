@@ -12,8 +12,8 @@ export const getUsersByRole = async (role) => {
     return _get(`/users/by-role?role=${role}`);
 };
 
-export const createProject = async (adminId, projectData) => {
-    return _post(`/projects/?admin_id=${adminId}`, projectData);
+export const createProject = async (projectData) => {
+    return _post("/projects/", projectData);
 };
 
 export const addMemberToProject = async (projectId, memberData) => {
@@ -24,8 +24,9 @@ export const removeMemberFromProject = async (projectId, memberData) => {
     return _delete(`/projects/${projectId}/members`, memberData);
 };
 
-export const getProjects = async () => {
-    return _get("/projects/");
+export const getProjects = async (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    return _get(`/projects/?${query}`);
 };
 
 export const updateProject = async (projectId, projectData) => {
