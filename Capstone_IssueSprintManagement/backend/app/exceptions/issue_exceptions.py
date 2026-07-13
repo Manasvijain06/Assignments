@@ -1,21 +1,24 @@
-class IssueNotFoundException(Exception):
-    def __init__(self, message="Issue not found"):
-        self.message = message
-        super().__init__(self.message)
+from app.exceptions.base_exception import BaseAppException
 
 
-class InvalidIssueStatusTransitionException(Exception):
-    def __init__(self, message="Invalid issue status transition"):
-        self.message = message
-        super().__init__(self.message)
+class IssueNotFoundException(BaseAppException):
+    default_message = "Issue not found"
 
 
-class AssigneeRequiredException(Exception):
-    def __init__(self, message="Only the assigned user can update issue status"):
-        self.message = message
-        super().__init__(self.message)
+class InvalidIssueStatusTransitionException(BaseAppException):
+    default_message = "Invalid issue status transition"
 
-class InvalidParentIssueException(Exception):
-    def __init__(self, message="Parent issue must be a story"):
-        self.message = message
-        super().__init__(self.message)
+
+class AssigneeRequiredException(BaseAppException):
+    default_message = "Only the assigned user can update issue status"
+
+
+class InvalidParentIssueException(BaseAppException):
+    default_message = "Parent issue must be a story"
+
+class CommentNotFoundException(BaseAppException):
+    default_message = "Comment not found"
+
+
+class CommentPermissionDeniedException(BaseAppException):
+    default_message = "You can update or delete only your own comments"

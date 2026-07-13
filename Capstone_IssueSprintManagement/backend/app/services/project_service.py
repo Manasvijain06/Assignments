@@ -26,14 +26,17 @@ class ProjectService:
         self.user_repository = UserRepository(db)
 
     def _get_object_id(self, object_id: str):
+        """
+        Convert string id to ObjectId.
+        """
         try:
             return ObjectId(object_id)
-        except InvalidId:
-            raise ProjectNotFoundException()
+        except InvalidId as exc:
+            raise ProjectNotFoundException() from exc
 
     def _validate_admin(self, admin_id: str):
         """
-        Validate that the user exists and has the Admin role.
+        Validate Admin role.
         """
         admin = self.user_repository.find_by_id(admin_id)
 
@@ -74,11 +77,9 @@ class ProjectService:
         Fetch a list of all projects.
         """
         projects = self.project_repository.get_all_projects()
-
         project_list = []
 
         for project in projects:
-
             members = []
 
             for member_id in project.get("members", []):
@@ -118,33 +119,31 @@ class ProjectService:
         return project_list
 
     def update_project(self, project_id: str, project_data):
-            """
-            Update the project description.
-            """
-            object_id = self._get_object_id(project_id)
-
-            project = self.project_repository.find_by_id(object_id)
-
-            if not project:
-                raise ProjectNotFoundException()
-
-            self.project_repository.update_description(
-                object_id,
-                project_data.description
-            )
-
-    def delete_project(self, project_id: str):
         """
-        Delete a project by its ID.
+        Update the project description.
         """
-        object_id = self._get_object_id(project_id)
-
-        project = self.project_repository.find_by_id(object_id)
+        project_object_id = self._get_object_id(project_id)
+        project = self.project_repository.find_by_id(project_object_id)
 
         if not project:
             raise ProjectNotFoundException()
 
-        self.project_repository.delete_project(object_id)
+        self.project_repository.update_description(
+            project_object_id,
+            project_data.description,
+        )
+
+    def delete_project(self, project_id: str):
+        """
+        Delete a project.
+        """
+        project_object_id = self._get_object_id(project_id)
+        project = self.project_repository.find_by_id(project_object_id)
+
+        if not project:
+            raise ProjectNotFoundException()
+
+        self.project_repository.delete_project(project_object_id)
 
     def add_member(self, project_id: str, admin_id: str, member_id: str):
         """

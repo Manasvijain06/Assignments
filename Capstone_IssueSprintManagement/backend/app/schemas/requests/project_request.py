@@ -5,35 +5,21 @@ class CreateProjectRequest(BaseModel):
     Project Creation Request Schema.
     """
 
-    name: str = Field(
-        min_length=3,
-        max_length=100,
-        )
-
-    description: str = Field(
-        min_length=3,
-        max_length=100,
-    )
-
-    project_key: str = Field(
-        min_length=2,
-        max_length=10,
-        )
+    name: str = Field(min_length=3, max_length=100)
+    description: str = Field(min_length=3, max_length=100)
+    project_key: str = Field(min_length=2, max_length=10)
 
 class UpdateProjectRequest(BaseModel):
     """
     Request schema for updating project details.
     """
-    description: str = Field(
-        min_length=3,
-        max_length=100,
-        )
+    description: str = Field(min_length=3, max_length=100)
 
 class ProjectMemberRequest(BaseModel):
     """
     Request schema for updating project member.
     """
-    User_id: str
+    user_id: str
 
 class AddMemberRequest(BaseModel):
     """

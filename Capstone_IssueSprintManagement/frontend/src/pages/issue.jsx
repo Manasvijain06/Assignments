@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import Sidebar from "../components/Sidebar";
 import IssueList from "../components/issues/IssueList";
@@ -11,29 +11,75 @@ import {
     getProjects,
     getUsersByRole,
     updateIssueStatus,
-    getProjectStories
+    getProjectStories,
+    addIssueComment,
+    updateIssueComment,
+    deleteIssueComment,
 } from "../services/auth-service";
 
+const initialFilters = {
+  status: "all",
+  priority: "all",
+  assignee: "all",
+  search: "",
+};
+
+const initialIssueData = {
+  title: "",
+  description: "",
+  type: "task",
+  priority: "medium",
+  assignee: "",
+  parent_id: "",
+};
+
 function Issue() {
-    const user = JSON.parse(localStorage.getItem("user"));
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
 
     const [projects, setProjects] = useState([]);
-    const [selectedProjectId, setSelectedProjectId] = useState("");
+    const [selectedProjectId, setSelectedProjectId] = useState(
+        localStorage.getItem("selectedProjectId") || ""
+    );
 
     const [issues, setIssues] = useState([]);
     const [members, setMembers] = useState([]);
+    const [stories, setStories] = useState([]);
+    const [selectedIssue, setSelectedIssue] = useState(null);
 
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const limit = 6;
 
-    const [stories, setStories] = useState([]);
-    const [selectedIssue, setSelectedIssue] = useState(null);
+    const [filters, setFilters] = useState(initialFilters);
+    const [showCreateModal, setShowCreateModal] = useState(false);
+    const [issueData, setIssueData] = useState(initialIssueData);
+
+    const [commentText, setCommentText] = useState("");
+    const [editingCommentId, setEditingCommentId] = useState(null);
+    const [editCommentText, setEditCommentText] = useState("");
 
     const [notification, setNotification] = useState({
         message: "",
         type: "",
     });
+
+    useEffect(() => {
+      loadProjects();
+      loadUsers();
+    }, []);
+
+    useEffect(() => {
+      if (selectedProjectId) {
+        loadIssues();
+      }
+    }, [
+      selectedProjectId,
+      page,
+      filters.status,
+      filters.priority,
+      filters.assignee,
+      filters.search,
+    ]);
 
     const showNotification = (message, type = "success") => {
         setNotification({ message, type });
@@ -43,50 +89,35 @@ function Issue() {
         }, 3000);
     };
 
-    const [filters, setFilters] = useState({
-        status: "all",
-        priority: "all",
-        assignee: "all",
-        search: "",
-    });
-
-    const [showCreateModal, setShowCreateModal] = useState(false);
-
-    const [issueData, setIssueData] = useState({
-        title: "",
-        description: "",
-        type: "task",
-        priority: "medium",
-        assignee: "",
-        parent_id: "",
-    });
-
-    useEffect(() => {
-        loadProjects();
-        loadUsers();
-    }, []);
-
-    useEffect(() => {
-        if (selectedProjectId) {
-            loadIssues();
-        }
-    }, [
-        selectedProjectId,
-        page,
-        filters.status,
-        filters.priority,
-        filters.assignee,
-        filters.search,
-    ]);
 
     const loadProjects = async () => {
         try {
             const data = await getProjects();
-            setProjects(data);
+            const visibleProjects =
+              user.role === "admin"
+                ? data
+                : data.filter((project) =>
+                    project.members?.some(
+                      (member) => member.user_id === user.user_id,
+                    ),
+                  );
 
-            if (data.length > 0) {
-                setSelectedProjectId(data[0].project_id);
-                loadStories(data[0].project_id);
+            setProjects(visibleProjects);
+
+            const savedProjectId = localStorage.getItem("selectedProjectId");
+            const projectExists = data.some(
+              (project) => project.project_id === savedProjectId,
+            );
+
+            if (projectExists) {
+              setSelectedProjectId(savedProjectId);
+              loadStories(savedProjectId);
+            } else if (visibleProjects.length > 0) {
+              const firstProjectId = visibleProjects[0].project_id;
+
+              setSelectedProjectId(firstProjectId);
+              localStorage.setItem("selectedProjectId", firstProjectId);
+              loadStories(firstProjectId);
             }
         } catch (error) {
             showNotification(error.detail || "Failed to load projects.", "error");
@@ -125,7 +156,6 @@ function Issue() {
     const handleSearch = (e) => {
         e.preventDefault();
         setPage(1);
-        loadIssues();
     };
 
     const handleCreateIssue = async (e) => {
@@ -144,15 +174,7 @@ function Issue() {
 
             showNotification("Issue created successfully.", "success");
             setShowCreateModal(false);
-
-            setIssueData({
-                title: "",
-                description: "",
-                type: "task",
-                priority: "medium",
-                assignee: "",
-                parent_id: "",
-            });
+            setIssueData(initialIssueData);
 
             await loadIssues();
         } catch (error) {
@@ -160,15 +182,90 @@ function Issue() {
         }
     };
 
+    const refreshSelectedIssue = async () => {
+        const response = await getProjectIssues(selectedProjectId, {
+            page,
+            limit,
+            status: filters.status,
+            priority: filters.priority,
+            assignee: filters.assignee,
+            search: filters.search,
+        });
 
-    const loadStories = async (projectId) => {
-        try {
-            const data = await getProjectStories(projectId);
-            setStories(data);
-        } catch (error) {
-            showNotification(error.detail || "Failed to load stories.", "error");
+        setIssues(response.items);
+
+        const allIssues = response.items.flatMap((issue) => [
+            issue,
+            ...(issue.children || []),
+        ]);
+
+        const updatedIssue = allIssues.find(
+            (issue) => issue.issue_id === selectedIssue.issue_id,
+        );
+
+        if (updatedIssue) {
+            setSelectedIssue(updatedIssue);
         }
     };
+
+    const handleAddComment = async () => {
+        if (!commentText.trim()){
+            showNotification("Comment cannot be empty,","error")
+            return;
+        }
+
+        try {
+            await addIssueComment(selectedIssue.issue_id, {
+                user_id: user.user_id,
+                comment: commentText,
+            });
+
+            setCommentText("");
+            showNotification("Comment added successfully.", "success");
+
+            await refreshSelectedIssue();
+        } catch (error) {
+            showNotification(error.detail || "Failed to add comments.", "error");
+        }
+    };
+
+    const handleEditComment = (comment) => {
+        setEditingCommentId(comment.comment_id);
+        setEditCommentText(comment.comment);
+    };
+
+    const handleUpdateComment = async (commentId) => {
+        try {
+            await updateIssueComment(selectedIssue.issue_id, commentId, {
+                user_id: user.user_id,
+                comment: editCommentText,
+            });
+
+            setEditingCommentId(null);
+            setEditCommentText("");
+
+            showNotification("Comment updated successfully.", "success");
+            await refreshSelectedIssue();
+        } catch (error) {
+            showNotification(error.detail || "Failed to update comment.","error",
+            );
+        }
+    };
+
+    const handleDeleteComment = async (commentId) => {
+        try {
+            await deleteIssueComment(
+                selectedIssue.issue_id,
+                commentId,
+                user.user_id,
+            );
+            showNotification("Comment deleted successfully.", "success");
+            await refreshSelectedIssue();
+        } catch (error) {
+            showNotification(error.detail || "Failed to delete comment.", "error");
+        }
+    };
+
 
     const canUpdateStatus = (issue) => {
         if (!user) return false;
@@ -229,6 +326,14 @@ function Issue() {
             showNotification(error.detail || "Status update failed.", "error");
         }
     };
+    const loadStories = async (projectId) => {
+      try {
+        const data = await getProjectStories(projectId);
+        setStories(data);
+      } catch (error) {
+        showNotification(error.detail || "Failed to load stories.", "error");
+      }
+    };
 
     return (
         <div className="dashboard-layout">
@@ -264,6 +369,16 @@ function Issue() {
                         setSelectedIssue={setSelectedIssue}
                         canUpdateStatus={canUpdateStatus}
                         handleDetailStatusChange={handleDetailStatusChange}
+                        user={user}
+                        commentText={commentText}
+                        setCommentText={setCommentText}
+                        editingCommentId={editingCommentId}
+                        editCommentText={editCommentText}
+                        setEditCommentText={setEditCommentText}
+                        handleAddComment={handleAddComment}
+                        handleEditComment={handleEditComment}
+                        handleUpdateComment={handleUpdateComment}
+                        handleDeleteComment={handleDeleteComment}
                     />
                 )}
             </main>

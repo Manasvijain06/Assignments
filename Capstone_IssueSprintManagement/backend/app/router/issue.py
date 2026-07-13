@@ -1,20 +1,16 @@
 from typing import List
-from fastapi import APIRouter, HTTPException, Query
 
-from app.database import mongodb
-from app.exceptions.issue_exceptions import (
-    AssigneeRequiredException,
-    InvalidIssueStatusTransitionException,
-    IssueNotFoundException,
-    InvalidParentIssueException,
-)
-from app.exceptions.project_exceptions import ProjectNotFoundException
-from app.exceptions.user_exceptions import UserNotFoundException
+from fastapi import APIRouter, Depends, Query
+
+from app.dependencies.database import get_db
 from app.schemas.requests.issue_request import (
+    CreateCommentRequest,
     CreateIssueRequest,
+    UpdateCommentRequest,
     UpdateIssueStatusRequest,
 )
 from app.schemas.responses.issue_response import (
+    CommentResponse,
     CreateIssueResponse,
     IssueListResponse,
     UpdateIssueStatusResponse,
@@ -25,38 +21,19 @@ from app.services.issue_service import IssueService
 router = APIRouter()
 
 
-@router.post(
-    "/{project_id}/issues",
-    response_model=CreateIssueResponse,
-)
-def create_issue(project_id: str, issue: CreateIssueRequest):
+@router.post("/{project_id}/issues", response_model=CreateIssueResponse)
+def create_issue(project_id: str, issue: CreateIssueRequest, db=Depends(get_db)):
     """
     Create a new issue inside a project.
     """
 
-    if mongodb.db is None:
-        raise HTTPException(
-            status_code=500,
-            detail="Database connection not initialized.",
-        )
+    issue_service = IssueService(db)
+    issue_id = issue_service.create_issue(project_id, issue)
 
-    try:
-        issue_service = IssueService(mongodb.db)
-        issue_id = issue_service.create_issue(project_id, issue)
-
-        return {
-            "message": "Issue created successfully.",
-            "issue_id": issue_id,
+    return {
+        "message": "Issue created successfully.",
+        "issue_id": issue_id,
         }
-
-    except ProjectNotFoundException as exc:
-        raise HTTPException(status_code=404, detail=exc.message)
-
-    except UserNotFoundException as exc:
-        raise HTTPException(status_code=404, detail=exc.message)
-
-    except InvalidParentIssueException as exc:
-        raise HTTPException(status_code=400, detail=exc.message)
 
 @router.get("/{project_id}/issues", response_model=IssueListResponse)
 def get_project_issues(
@@ -67,59 +44,91 @@ def get_project_issues(
     priority: str | None = Query(None),
     assignee: str | None = Query(None),
     search: str | None = Query(None),
+    db=Depends(get_db),
 ):
-    if mongodb.db is None:
-        raise HTTPException(status_code=500, detail="Database connection not initialized.")
+    """
+    Fetch project issues with pagination and filter.
+    """
+    issue_service = IssueService(db)
 
-    try:
-        issue_service = IssueService(mongodb.db)
-
-        return issue_service.get_project_issues(
-            project_id=project_id,
-            page=page,
-            limit=limit,
-            status=status,
-            priority=priority,
-            assignee=assignee,
-            search=search,
-        )
-
-    except ProjectNotFoundException as exc:
-        raise HTTPException(status_code=404, detail=exc.message)
+    return issue_service.get_project_issues(
+        project_id=project_id,
+        page=page,
+        limit=limit,
+        status=status,
+        priority=priority,
+        assignee=assignee,
+        search=search,
+    )
 
 
 @router.patch("/issues/{issue_id}/status", response_model=UpdateIssueStatusResponse)
-def update_issue_status(issue_id: str, request: UpdateIssueStatusRequest):
-    if mongodb.db is None:
-        raise HTTPException(status_code=500, detail="Database connection not initialized.")
+def update_issue_status(issue_id: str, request: UpdateIssueStatusRequest, db=Depends(get_db)):
+    """
+    Update issue status.
+    """
 
-    try:
-        issue_service = IssueService(mongodb.db)
-        issue_service.update_issue_status(issue_id, request)
+    issue_service = IssueService(db)
+    issue_service.update_issue_status(issue_id, request)
 
-        return {"message": "Issue status updated successfully."}
-
-    except IssueNotFoundException as exc:
-        raise HTTPException(status_code=404, detail=exc.message)
-
-    except AssigneeRequiredException as exc:
-        raise HTTPException(status_code=403, detail=exc.message)
-
-    except InvalidIssueStatusTransitionException as exc:
-        raise HTTPException(status_code=400, detail=exc.message)
-
+    return {"message": "Issue status updated successfully."}
 
 @router.get("/{project_id}/stories",response_model=List[StoryOptionResponse],)
-def get_project_stories(project_id: str):
-    if mongodb.db is None:
-        raise HTTPException(
-            status_code=500,
-            detail="Database connection not initialized.",
-        )
+def get_project_stories(project_id: str, db=Depends(get_db)):
+    """
+    Fetch story issues for project.
+    """
 
-    try:
-        issue_service = IssueService(mongodb.db)
-        return issue_service.get_project_stories(project_id)
+    issue_service = IssueService(db)
 
-    except ProjectNotFoundException as exc:
-        raise HTTPException(status_code=404, detail=exc.message)
+    return issue_service.get_project_stories(project_id)
+
+
+@router.post("/issues/{issue_id}/comments", response_model=CommentResponse)
+def add_comment(issue_id: str, request: CreateCommentRequest, db=Depends(get_db)):
+    """
+    Add own comment.
+    """
+
+    issue_service = IssueService(db)
+    issue_service.add_comment(issue_id, request)
+
+    return {
+        "message": "Comment added successfully."
+    }
+
+@router.put("/issues/{issue_id}/comments/{comment_id}", response_model=CommentResponse)
+def update_comment(
+    issue_id: str,
+    comment_id: str,
+    request: UpdateCommentRequest,
+    db=Depends(get_db),
+):
+    """
+    Update own comment.
+    """
+
+    issue_service = IssueService(db)
+    issue_service.update_comment(issue_id, comment_id, request)
+
+    return {
+        "message": "Comment updated successfully."
+    }
+
+@router.delete("/issues/{issue_id}/comments/{comment_id}", response_model=CommentResponse)
+def delete_comment(
+    issue_id: str,
+    comment_id: str,
+    user_id: str,
+    db=Depends(get_db),
+):
+    """
+    Delete own comment.
+    """
+
+    issue_service = IssueService(db)
+    issue_service.delete_comment(issue_id, comment_id, user_id)
+
+    return {
+        "message": "Comment deleted successfully."
+    }

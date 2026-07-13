@@ -16,6 +16,9 @@ class CreateIssueRequest(BaseModel):
     parent_id: str | None = None
 
 class UpdateIssueStatusRequest(BaseModel):
+    """
+    Request schema for updating issue status.
+    """
     status: Literal[
         "backlog",
         "todo",
@@ -23,3 +26,18 @@ class UpdateIssueStatusRequest(BaseModel):
         "done"
     ]
     updated_by: str
+
+class CreateCommentRequest(BaseModel):
+    """
+    Request schema for adding a comment.
+    """
+    user_id: str
+    comment: str = Field(..., min_length=1)
+
+
+class UpdateCommentRequest(BaseModel):
+    """
+    Request schema for updating a comment.
+    """
+    user_id: str
+    comment: str = Field(..., min_length=1)

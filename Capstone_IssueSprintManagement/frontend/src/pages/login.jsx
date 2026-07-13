@@ -1,12 +1,13 @@
 import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+
+import authImage from "../assets/auth-image.png";
 import { loginUser } from "../services/auth-Service";
 import { validateLoginForm } from "../utils/validation";
-import { Link, useNavigate } from "react-router-dom";
-import authImage from "../assets/auth-image.png";
-import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 function Login() {
   const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -17,6 +18,13 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  const clearFieldError = (fieldName) => {
+    setErrors((prev) => ({
+      ...prev,
+      [fieldName]: "",
+    }));
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -24,12 +32,7 @@ function Login() {
       ...prev,
       [name]: value,
     }));
-
-    setErrors((prev) => ({
-      ...prev,
-      [name]: "",
-    }));
-
+    clearFieldError(name);
     setMessage("");
   };
 
@@ -65,8 +68,8 @@ function Login() {
   };
 
   return (
-    <div className="auth-page">
-      <div className="auth-card">
+    <main className="auth-page">
+      <section className="auth-card">
         <div className="auth-left">
           <h1>
             Issue & Sprint
@@ -74,7 +77,7 @@ function Login() {
             Management
           </h1>
           <div className="auth-image">
-            <img src={authImage} alt="Authentication" />
+            <img src={authImage} alt="Issue ans sprint illustration" />
           </div>
 
           <p>
@@ -111,10 +114,12 @@ function Login() {
               <button
                 type="button"
                 className="toggle-password"
+                aria-label={showPassword ? "Hide password" : "Show password"}
                 onClick={() => setShowPassword(!showPassword)}
               >
-                {showPassword ? <FaEyeSlash /> : <FaEye />}
+                {showPassword ? "Hide" : "Show"}
               </button>
+              {errors.password && <p className="error">{errors.password}</p>}
             </div>
 
             <button className="auth-btn" type="submit" disabled={loading}>
@@ -122,17 +127,14 @@ function Login() {
             </button>
           </form>
 
-          {message && (
-            <p className={message.includes("successful") ? "success" : "error"}>
-              {message}
-            </p>
-          )}
+          {message && <p className="error">{message}</p>}
+
           <p className="auth-link">
             Don't have an account? <Link to="/register">Register</Link>
           </p>
         </div>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }
 

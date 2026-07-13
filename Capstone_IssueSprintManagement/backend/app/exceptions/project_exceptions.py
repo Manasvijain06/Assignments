@@ -1,22 +1,17 @@
-class ProjectAlreadyExistsException(Exception):
-    def __init__(self, message="Project key already exists"):
-        self.message = message
-        super().__init__(self.message)
+from app.exceptions.base_exception import BaseAppException
 
 
-class ProjectNotFoundException(Exception):
-    def __init__(self, message="Project not found"):
-        self.message = message
-        super().__init__(self.message)
+class ProjectAlreadyExistsException(BaseAppException):
+    default_message = "Project key already exists"
 
 
-class MemberAlreadyAssignedException(Exception):
-    def __init__(self, message="Member already assigned to project"):
-        self.message = message
-        super().__init__(self.message)
+class ProjectNotFoundException(BaseAppException):
+    default_message = "Project not found"
 
 
-class MemberNotAssignedException(Exception):
-    def __init__(self, message="Member is not assigned to project"):
-        self.message = message
-        super().__init__(self.message)
+class MemberAlreadyAssignedException(BaseAppException):
+    default_message = "Member already assigned to project"
+
+
+class MemberNotAssignedException(BaseAppException):
+    default_message = "Member is not assigned to project"

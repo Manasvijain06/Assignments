@@ -34,3 +34,6 @@ class SprintListResponse(BaseModel):
     page: int
     limit: int
     total_pages: int
+
+class SprintStatusResponse(BaseModel):
+    message: str

@@ -296,12 +296,26 @@ hr {
 .dashboard-sidebar {
     width: 240px;
     height: 100vh;
-    background: #ffffff;
-    border-right: 1px solid #e5e7eb;
-    padding: 18px 22px;
     display: flex;
     flex-direction: column;
-    flex-shrink: 0;
+    padding: 18px 22px;
+    background: #fff;
+    border-right: 1px solid #e5e7eb;
+}
+
+.sidebar-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+}
+
+.sidebar-bottom {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding-bottom: 28px;
 }
 
 .sidebar-header {
@@ -323,11 +337,6 @@ hr {
     font-weight: 500;
 }
 
-.sidebar-menu {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
 
 .sidebar-item {
     display: flex;
@@ -359,7 +368,7 @@ hr {
 }
 
 .sidebar-logout {
-    margin-top: auto;
+    margin-top: 8px;
     width: 100%;
     display: flex;
     align-items: center;
@@ -376,4 +385,213 @@ hr {
 
 .sidebar-logout:hover {
     background: #ffe4e6;
+}
+
+.sidebar-profile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    text-decoration: none;
+    color: #111827;
+    background: #f8fafc;
+}
+
+.sidebar-profile:hover {
+    background: #eef2ff;
+}
+
+.sidebar-profile-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: #4f46e5;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+
+.sidebar-profile p {
+    margin: 2px 0 0;
+    color: #6b7280;
+    font-size: 13px;
+}
+
+/*---------------Profile--------------------*/
+.profile-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 28px;
+    width: 100%;
+}
+
+.profile-card-header h3 {
+    margin: 0;
+    font-size: 20px;
+}
+
+.profile-card-header .edit-project-btn {
+    padding: 0 18px;
+    height: 40px;
+    margin: 0px
+}
+.profile-card-grid {
+    display: flex;
+    justify-content: flex-start;
+}
+
+.profile-card-grid .overview-card {
+    width: 350px;
+    max-width: 100%;
+}
+
+.profile-password-field {
+    position: relative;
+    width: 100%;
+}
+.profile-password-field input {
+    width: 100%;
+    height: 46px;
+    padding: 0 44px 0 14px;
+    margin: 8px 0 14px;
+    box-sizing: border-box;
+}
+
+.profile-password-field button {
+    position: absolute;
+    top: 50%;
+    right: 14px;
+    left: auto;
+    transform: translateY(-50%);
+
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+
+    margin: 0;
+    padding: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border: none;
+    background: transparent;
+    color: #6b7280;
+    cursor: pointer;
+    z-index: 2;
+}
+
+.profile-password-field button:hover {
+    color: #4f46e5;
+}
+
+.profile-action-row {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.profile-cancel-btn {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+/*-------------comment box------------------*/
+.comments-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.comment-input-box {
+    margin-top: 12px;
+}
+
+.comment-input-box textarea {
+    width: 100%;
+    min-height: 90px;
+    padding: 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    resize: vertical;
+    font-family: inherit;
+    box-sizing: border-box;
+}
+
+.comments-list {
+    margin-top: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.comment-card {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 14px;
+}
+
+.comment-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.comment-top span {
+    display: block;
+    margin-top: 3px;
+    color: #6b7280;
+    font-size: 12px;
+}
+
+.comment-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.comment-actions button {
+    width: auto;
+    background: transparent;
+    color: #4f46e5;
+    padding: 0;
+    margin: 0;
+    font-size: 13px;
+}
+
+.comment-actions button:hover {
+    background: transparent;
+    text-decoration: underline;
+}
+
+.comment-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 16px;
+}
+
+.comment-pagination button {
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    background: white;
+    cursor: pointer;
+}
+
+.comment-pagination button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.comment-pagination span {
+    font-size: 14px;
+    color: #6b7280;
 }

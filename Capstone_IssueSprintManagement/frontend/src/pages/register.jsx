@@ -1,24 +1,25 @@
 import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+
+import authImage from "../assets/auth-image.png";
+import Notification from "../components/Notification";
 import { registerUser } from "../services/auth-Service";
 import { validateRegisterForm } from "../utils/validation";
-import { Link, useNavigate } from "react-router-dom";
-import authImage from "../assets/auth-image.png";
-import { FaEye, FaEyeSlash } from "react-icons/fa";
-import Notification from "../components/Notification";
 
 function Register() {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
+
+  const initialFormData = {
     name: "",
     email: "",
     password: "",
     role: "",
-  });
+  };
 
+  const [formData, setFormData] = useState(initialFormData);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-
   const [notification, setNotification] = useState({
     message: "",
     type: "",
@@ -31,6 +32,15 @@ function Register() {
       setNotification({ message: "", type: "" });
     }, 3000);
   };
+
+  const clearFieldError = (fieldName) => {
+    setErrors((prev) => ({
+      ...prev,
+      [fieldName]: "",
+    }));
+  };
+
+
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -39,11 +49,7 @@ function Register() {
       [name]: value,
     }));
 
-    setErrors((prev) => ({
-      ...prev,
-      [name]: "",
-    }));
-    setMessage("");
+    clearFieldError(name);
   };
 
   const handleSubmit = async (e) => {
@@ -67,13 +73,8 @@ function Register() {
       const response = await registerUser(encryptedFormData);
 
       showNotification("Registration successful!","success");
+      setFormData(initialFormData);
 
-      setFormData({
-        name: "",
-        email: "",
-        password: "",
-        role: "",
-      });
       setTimeout(() => {
         navigate("/login");
       }, 1000);
@@ -85,8 +86,8 @@ function Register() {
   };
 
   return (
-    <div className="auth-page">
-      <div className="auth-card">
+    <main className="auth-page">
+      <section className="auth-card">
         <div className="auth-left">
           <h1>
             Issue & Sprint
@@ -140,10 +141,12 @@ function Register() {
               <button
                 type="button"
                 className="toggle-password"
-                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                onClick={() => setShowPassword((prev) => !prev)}
               >
-                {showPassword ? <FaEyeSlash /> : <FaEye />}
+                {showPassword ? "Hide" : "Show"}
               </button>
+
             </div>
 
             <label>Role</label>
@@ -162,13 +165,13 @@ function Register() {
             Already have an account? <Link to="/login">Login</Link>
           </p>
         </div>
-      </div>
+      </section>
       <Notification
         message={notification.message}
         type={notification.type}
         onClose={() => setNotification({ message: "", type: "" })}
       />
-    </div>
+    </main>
   );
 }
 

@@ -1,4 +1,5 @@
 import { useEffect, useState, } from "react";
+
 import Sidebar from "../components/Sidebar";
 import SprintList from "../components/sprints/SprintList";
 import SprintDetail from "../components/sprints/SprintDetail";
@@ -9,15 +10,26 @@ import {
     createSprint,
     getProjectIssues,
     addIssueToSprint,
+    startSprint,
+    completeSprint,
+    removeIssueFromSprint,
 } from "../services/auth-service";
 
+const initialSprintData = {
+  name: "",
+  project_id: "",
+  start_date: "",
+  end_date: "",
+};
+
 function Sprint() {
-    const user = JSON.parse(localStorage.getItem("user"));
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
 
     const [projects, setProjects] = useState([]);
     const [sprints, setSprints] = useState([]);
-
-    const [selectedProjectId, setSelectedProjectId] = useState("all");
+    const [selectedProjectId, setSelectedProjectId] = useState(
+      localStorage.getItem("selectedProjectId") || "all",
+    );
     const [statusFilter, setStatusFilter] = useState("all");
     const [search, setSearch] = useState("");
 
@@ -30,11 +42,19 @@ function Sprint() {
     const limit = 6;
 
     const [showCreateModal, setShowCreateModal] = useState(false);
-
+    const [sprintData, setSprintData] = useState(initialSprintData);
     const [notification, setNotification] = useState({
         message: "",
         type: "",
     });
+
+    useEffect(() => {
+       loadProjects();
+    }, []);
+
+    useEffect(() => {
+       loadSprints();
+    }, [page, selectedProjectId, statusFilter, search]);
 
     const showNotification = (message, type = "success") => {
         setNotification({ message, type });
@@ -43,31 +63,42 @@ function Sprint() {
             setNotification({ message: "", type: "" });
         }, 3000);
     };
-    const [sprintData, setSprintData] = useState({
-        name: "",
-        project_id: "",
-        start_date: "",
-        end_date: "",
-    });
 
-    useEffect(() => {
-        loadProjects();
-    }, []);
+    const getErrorMessage = (error, fallback) => {
+      if (Array.isArray(error.detail)) {
+        return error.detail[0]?.msg || fallback;
+      }
 
-    useEffect(() => {
-        loadSprints();
-    }, [page, selectedProjectId, statusFilter, search]);
+      return error.detail || fallback;
+    };
 
     const loadProjects = async () => {
         try {
             const data = await getProjects();
-            setProjects(data);
 
-            if (data.length > 0) {
-                setSprintData((prev) => ({
-                    ...prev,
-                    project_id: data[0].project_id,
-                }));
+            const visibleProjects =
+                user.role === "admin"
+                    ? data
+                    : data.filter((project) =>
+                        project.members?.some(
+                            (member) => member.user_id === user.user_id,
+                        ),
+                    );
+
+            setProjects(visibleProjects);
+
+            const savedProjectId = localStorage.getItem("selectedProjectId");
+            const projectExists = visibleProjects.some(
+              (project) => project.project_id === savedProjectId,
+            );
+
+            if (projectExists) {
+              setSelectedProjectId(savedProjectId);
+            } else if (visibleProjects.length > 0) {
+              const firstProjectId = visibleProjects[0].project_id;
+
+              setSelectedProjectId(firstProjectId);
+              localStorage.setItem("selectedProjectId", firstProjectId);
             }
         } catch (error) {
             showNotification(error.detail || "Failed to load projects.", "error");
@@ -91,7 +122,25 @@ function Sprint() {
         }
     };
 
+     const refreshSprints = async () => {
+       const response = await getSprints({
+         page,
+         limit,
+         project_id: selectedProjectId,
+         status: statusFilter,
+         search,
+       });
+
+       setSprints(response.items);
+       setTotalPages(response.total_pages);
+
+       return response.items;
+     };
+    
+    
     const loadAvailableIssues = async (projectId) => {
+        if (!projectId || projectId === "all") return;
+
         try {
             const response = await getProjectIssues(projectId, {
                 page: 1,
@@ -107,16 +156,36 @@ function Sprint() {
                 ...(issue.children || []),
             ]);
 
+            const sprintResponse = await getSprints({
+                page: 1,
+                limit: 50,
+                project_id: projectId,
+                status: "all",
+                search: "",
+            });
+
+            const assignedIssueIds = sprintResponse.items.flatMap(
+                (sprint) => sprint.issues?.map((issue) => issue.issue_id) || [],
+            );
+
             setAvailableIssues(
-                allIssues.filter((issue) => issue.status !== "done"),
+                allIssues.filter(
+                    (issue) =>
+                        issue.status !== "done" &&
+                        !assignedIssueIds.includes(issue.issue_id),
+                ),
             );
         } catch (error) {
             showNotification(error.detail || "Failed to load issues.", "error");
         }
     };
 
+
     const handleAddIssueToSprint = async () => {
-        if (!selectedIssueId) return;
+        if (!selectedIssueId) {
+            showNotification("Please select an issue.", "error");
+            return;
+        }
 
         try {
             await addIssueToSprint(selectedSprint.sprint_id, {
@@ -124,19 +193,20 @@ function Sprint() {
             });
 
             showNotification("Issue added to sprint.", "success");
-
             setSelectedIssueId("");
-            await loadSprints();
 
-            const updated = sprints.find(
-                (sprint) => sprint.sprint_id === selectedSprint.sprint_id,
+            const updatedSprints = await refreshSprints();
+            const updatedSprint = updatedSprints.find(
+              (sprint) => sprint.sprint_id === selectedSprint.sprint_id,
             );
 
-            if (updated) {
-                setSelectedSprint(updated);
+            if (updatedSprint) {
+              setSelectedSprint(updatedSprint);
             }
+
+            await loadAvailableIssues(selectedSprint.project_id);
         } catch (error) {
-            showNotification(error.detail || "Failed to add issue.", "error");
+            showNotification(getErrorMessage(error, "Failed to add issue."), "error");
         }
     };
 
@@ -172,6 +242,57 @@ function Sprint() {
             showNotification(error.detail || "Sprint creation failed.", "error");
         }
     };
+    const handleStartSprint = async () => {
+        try {
+            await startSprint(selectedSprint.sprint_id, {
+                updated_by: user.user_id,
+            });
+
+            showNotification("Sprint started successfully.", "success");
+            await loadSprints();
+
+            setSelectedSprint({
+                ...selectedSprint,
+                status: "active",
+            });
+        } catch (error) {
+            showNotification(error.detail || "Failed to start sprint.", "error");
+        }
+    };
+    const handleCompleteSprint = async () => {
+        try {
+            await completeSprint(selectedSprint.sprint_id, {
+                updated_by: user.user_id,
+            });
+
+            showNotification("Sprint completed successfully.", "success");
+            await loadSprints();
+
+            setSelectedSprint({
+                ...selectedSprint,
+                status: "completed",
+            });
+        } catch (error) {
+            showNotification(error.detail || "Failed to complete sprint.", "error");
+        }
+    };
+    const handleRemoveIssueFromSprint = async (issueId) => {
+        try {
+            await removeIssueFromSprint(selectedSprint.sprint_id, {
+                issue_id: issueId,
+            });
+
+            showNotification("Issue removed successfully.", "success");
+            await loadSprints();
+
+            setSelectedSprint((prev) => ({
+                ...prev,
+                issues: prev.issues.filter((issue) => issue.issue_id !== issueId),
+            }));
+        } catch (error) {
+            showNotification(error.detail || "Failed to remove issue.", "error");
+        }
+    };
 
     return (
         <div className="dashboard-layout">
@@ -201,12 +322,16 @@ function Sprint() {
                     />
                 ) : (
                     <SprintDetail
+                        user={user}
                         selectedSprint={selectedSprint}
                         setSelectedSprint={setSelectedSprint}
                         availableIssues={availableIssues}
                         selectedIssueId={selectedIssueId}
                         setSelectedIssueId={setSelectedIssueId}
                         handleAddIssueToSprint={handleAddIssueToSprint}
+                        handleStartSprint={handleStartSprint}
+                        handleCompleteSprint={handleCompleteSprint}
+                        handleRemoveIssueFromSprint={handleRemoveIssueFromSprint}
                     />
                 )}
             </main>

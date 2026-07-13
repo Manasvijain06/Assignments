@@ -1,27 +1,25 @@
-class SprintNotFoundException(Exception):
-    def __init__(self, message="Sprint not found"):
-        self.message = message
-        super().__init__(self.message)
+from app.exceptions.base_exception import BaseAppException
 
 
-class SprintCreationFailedException(Exception):
-    def __init__(self, message="Failed to create sprint"):
-        self.message = message
-        super().__init__(self.message)
+class SprintNotFoundException(BaseAppException):
+    default_message = "Sprint not found"
 
 
-class DoneIssueCannotBeAddedException(Exception):
-    def __init__(self, message="DONE issues cannot be added to sprint"):
-        self.message = message
-        super().__init__(self.message)
+class SprintCreationFailedException(BaseAppException):
+    default_message = "Failed to create sprint"
 
 
-class IssueAlreadyInSprintException(Exception):
-    def __init__(self, message="Issue already added to sprint"):
-        self.message = message
-        super().__init__(self.message)
+class DoneIssueCannotBeAddedException(BaseAppException):
+    default_message = "DONE issues cannot be added to sprint"
 
-class SprintAlreadyExistsException(Exception):
-    def __init__(self, message="Sprint name already exists in this project"):
-        self.message = message
-        super().__init__(self.message)
+
+class IssueAlreadyInSprintException(BaseAppException):
+    default_message = "Issue already added to sprint"
+
+
+class SprintAlreadyExistsException(BaseAppException):
+    default_message = "Sprint name already exists in this project"
+
+
+class InvalidSprintStatusException(BaseAppException):
+    default_message = "Invalid sprint status transition"

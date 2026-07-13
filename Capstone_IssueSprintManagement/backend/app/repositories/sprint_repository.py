@@ -1,15 +1,22 @@
 from bson import ObjectId
 
 
+from app.constants.collections import (
+    ISSUES_COLLECTION,
+    PROJECTS_COLLECTION,
+    SPRINTS_COLLECTION,
+)
+
+
 class SprintRepository:
     """
     Repository layer for sprint collection.
     """
 
     def __init__(self, db):
-        self.sprints_collection = db["sprints"]
-        self.issues_collection = db["issues"]
-        self.projects_collection = db["projects"]
+        self.sprints_collection = db[SPRINTS_COLLECTION]
+        self.issues_collection = db[ISSUES_COLLECTION]
+        self.projects_collection = db[PROJECTS_COLLECTION]
 
     def find_project_by_id(self, project_id: ObjectId):
         return self.projects_collection.find_one({"_id": project_id})
@@ -69,3 +76,19 @@ class SprintRepository:
                 },
             }
         )
+
+    def update_sprint_status(self, sprint_id: ObjectId, status: str, updated_at):
+        return self.sprints_collection.update_one(
+            {"_id": sprint_id},
+            {
+                "$set": {
+                    "status": status,
+                    "updated_at": updated_at,
+                }
+            },
+        )
+
+    def find_sprint_by_issue(self, issue_id: ObjectId):
+        return self.sprints_collection.find_one({
+            "issues": issue_id
+        })

@@ -10,28 +10,28 @@ DATABASE_NAME = os.getenv("DATABASE_NAME")
 
 client = None
 db = None
-users_collection = None
-projects_collection = None
+
 
 def connect_db():
     """
-    Create MongoDB connection when the FastAPI application starts.
+    Connect to MongoDB database.
     """
-    global client, db, users_collection, projects_collection
+    global client, db
 
     if not MONGO_URL:
         raise ValueError("MONGO_URL is missing in environment variables")
 
+    if not DATABASE_NAME:
+        raise ValueError("DATABASE_NAME is missing in environment variables.")
+
     client = MongoClient(MONGO_URL)
     db = client[DATABASE_NAME]
 
-    users_collection = db.users
-    projects_collection = db.projects
     print("MongoDB connected successfully")
 
 def close_db():
     """
-    Close MongoDB connection when the FastAPI application shuts down.
+    Close the MongoDB connection.
     """
     global client
 

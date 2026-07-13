@@ -1,5 +1,5 @@
-from datetime import UTC, datetime
 import math
+from datetime import UTC, datetime
 
 from bson import ObjectId
 from bson.errors import InvalidId
@@ -11,6 +11,7 @@ from app.exceptions.sprint_exceptions import (
     SprintCreationFailedException,
     SprintNotFoundException,
     SprintAlreadyExistsException,
+    InvalidSprintStatusException,
 )
 from app.exceptions.user_exceptions import UserNotFoundException
 from app.models.sprint_model import SprintModel
@@ -30,15 +31,21 @@ class SprintService:
     def _get_object_id(self, object_id: str):
         try:
             return ObjectId(object_id)
-        except InvalidId:
-            raise SprintNotFoundException()
+        except InvalidId as exc:
+            raise SprintNotFoundException() from exc
 
     def create_sprint(self, sprint_data):
+        """
+        Create a sprint.
+        """
         project_id = self._get_object_id(sprint_data.project_id)
         created_by = self.user_repository.find_by_id(sprint_data.created_by)
 
         if not self.sprint_repository.find_project_by_id(project_id):
             raise ProjectNotFoundException()
+
+        if not created_by:
+            raise UserNotFoundException()
 
         existing_sprint = self.sprint_repository.find_by_name(
             project_id,
@@ -47,9 +54,6 @@ class SprintService:
 
         if existing_sprint:
             raise SprintAlreadyExistsException()
-
-        if not created_by:
-            raise UserNotFoundException()
 
         sprint = SprintModel.build(
             name=sprint_data.name,
@@ -67,6 +71,9 @@ class SprintService:
         return str(result.inserted_id)
 
     def add_issue_to_sprint(self, sprint_id: str, issue_id: str):
+        """
+        Add a issue to a sprint.
+        """
         sprint_object_id = self._get_object_id(sprint_id)
         issue_object_id = self._get_object_id(issue_id)
 
@@ -80,11 +87,20 @@ class SprintService:
         if not issue:
             raise SprintNotFoundException("Issue not found")
 
+        if sprint["project_id"] != issue["project_id"]:
+            raise InvalidSprintStatusException(
+                "Issue belongs to a different project."
+            )
+
         if issue["status"] == "done":
             raise DoneIssueCannotBeAddedException()
 
-        if issue_object_id in sprint.get("issues", []):
-            raise IssueAlreadyInSprintException()
+        existing_sprint = self.sprint_repository.find_sprint_by_issue(issue_object_id)
+
+        if existing_sprint:
+            raise IssueAlreadyInSprintException(
+                "Issue already belongs to another sprint."
+            )
 
         self.sprint_repository.add_issue_to_sprint(
             sprint_object_id,
@@ -93,6 +109,9 @@ class SprintService:
         )
 
     def remove_issue_from_sprint(self, sprint_id: str, issue_id: str):
+        """
+        Remove an issue from sprint.
+        """
         sprint_object_id = self._get_object_id(sprint_id)
         issue_object_id = self._get_object_id(issue_id)
 
@@ -107,25 +126,10 @@ class SprintService:
             datetime.now(UTC),
         )
 
-    def _calculate_sprint_status(self, start_date, end_date):
-        today = datetime.now(UTC).date()
-
-        if isinstance(start_date, str):
-            start_date = datetime.fromisoformat(start_date).date()
-
-        if isinstance(end_date, str):
-            end_date = datetime.fromisoformat(end_date).date()
-
-        if today < start_date:
-            return "planned"
-
-        if start_date <= today <= end_date:
-            return "active"
-
-        return "completed"
-
-
     def _format_sprint(self, sprint):
+        """
+        Formate sprint response.
+        """
         sprint_issues = self.sprint_repository.find_issues_by_ids(
             sprint.get("issues", [])
         )
@@ -143,10 +147,7 @@ class SprintService:
             "sprint_id": str(sprint["_id"]),
             "name": sprint["name"],
             "project_id": str(sprint["project_id"]),
-            "status": self._calculate_sprint_status(
-                sprint["start_date"],
-                sprint["end_date"],
-            ),
+            "status": sprint.get("status", "planned"),
             "start_date": str(sprint["start_date"]),
             "end_date": str(sprint["end_date"]),
             "total_issues": total_issues,
@@ -173,6 +174,9 @@ class SprintService:
         status: str | None,
         search: str | None,
     ):
+        """
+        Fetch sprints with pagination and filters.
+        """
         query = {}
 
         if project_id and project_id != "all":
@@ -207,3 +211,81 @@ class SprintService:
             "limit": limit,
             "total_pages": math.ceil(total / limit) if total else 1,
         }
+
+    def start_sprint(self, sprint_id: str, updated_by: str):
+        """
+        Start a planned sprint.
+        """
+        sprint_object_id = self._get_object_id(sprint_id)
+        sprint = self.sprint_repository.find_sprint_by_id(sprint_object_id)
+
+        if not sprint:
+            raise SprintNotFoundException()
+
+        user = self.user_repository.find_by_id(updated_by)
+
+        if not user:
+            raise UserNotFoundException()
+
+        if user["role"] != "admin":
+            raise InvalidSprintStatusException("Only admin can start sprint")
+
+        current_status = sprint.get("status", "").lower()
+
+        if current_status != "planned":
+            raise InvalidSprintStatusException("Only planned sprint can be started")
+
+
+        result = self.sprint_repository.update_sprint_status(
+            sprint_object_id,
+            "active",
+            datetime.now(UTC),
+        )
+
+        print("Modified:", result.modified_count)
+
+
+    def complete_sprint(self, sprint_id: str, updated_by: str):
+        """
+        Complete an active sprint.
+        """
+        sprint_object_id = self._get_object_id(sprint_id)
+
+        sprint = self.sprint_repository.find_sprint_by_id(sprint_object_id)
+
+        if not sprint:
+            raise SprintNotFoundException()
+
+        user = self.user_repository.find_by_id(updated_by)
+
+        if not user:
+            raise UserNotFoundException()
+
+        if user["role"] != "admin":
+            raise InvalidSprintStatusException("Only admin can complete sprint")
+
+        if sprint["status"] != "active":
+            raise InvalidSprintStatusException("Only active sprint can be completed")
+
+        self.sprint_repository.update_sprint_status(
+            sprint_object_id,
+            "completed",
+            datetime.now(UTC),
+        )
+
+    def _calculate_sprint_status(self, start_date, end_date):
+        today = datetime.now(UTC).date()
+
+        if isinstance(start_date, str):
+            start_date = datetime.fromisoformat(start_date).date()
+
+        if isinstance(end_date, str):
+            end_date = datetime.fromisoformat(end_date).date()
+
+        if today < start_date:
+            return "planned"
+
+        if start_date <= today <= end_date:
+            return "active"
+
+        return "completed"

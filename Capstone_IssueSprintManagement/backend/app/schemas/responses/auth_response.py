@@ -21,9 +21,9 @@ class UserLoginResponse(BaseModel):
     access_token: str
     token_type: str
 
-class UserListResponse(BaseModel):
+class UserResponse(BaseModel):
     """
-    Response schema for user list.
+    Common user response schema.
     """
     user_id: str
     name: str
