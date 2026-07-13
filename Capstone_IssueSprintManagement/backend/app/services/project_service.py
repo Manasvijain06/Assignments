@@ -1,4 +1,5 @@
 from bson import ObjectId
+from bson.errors import InvalidId
 
 from app.exceptions.project_exceptions import (
     ProjectAlreadyExistsException,
@@ -18,6 +19,12 @@ class ProjectService:
     def __init__(self, db):
         self.projects_collection = db["projects"]
         self.users_collection = db["users"]
+
+    def _get_object_id(self, project_id: str):
+        try:
+            return ObjectId(project_id)
+        except InvalidId:
+            raise ProjectNotFoundException()
 
     def _validate_admin(self, admin_email: str):
         """
@@ -57,6 +64,16 @@ class ProjectService:
 
         result = self.projects_collection.insert_one(project)
         return str(result.inserted_id)
+
+    def delete_project(self, project_id: str):
+        object_id = self._get_object_id(project_id)
+
+        project = self.projects_collection.find_one({"_id": object_id})
+
+        if not project:
+            raise ProjectNotFoundException()
+
+        self.projects_collection.delete_one({"_id": object_id})
 
     def add_member(self, project_id: str, admin_email: str, member_email: str):
         """

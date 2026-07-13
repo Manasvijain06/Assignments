@@ -34,6 +34,19 @@ def create_project(project: ProjectCreate, admin_email: EmailStr = Query(...)):
             "project_id": project_id
         }
 
+@router.delete("/{project_id}")
+def delete_project(project_id: str):
+    if mongodb.db is None:
+        raise HTTPException(
+            status_code=500,
+            detail="Database connection not initialized"
+        )
+
+    project_service = ProjectService(mongodb.db)
+    project_service.delete_project(project_id)
+
+    return {"message": "Project deleted successfully"}
+
 
 @router.post("/{project_id}/members", response_model=ProjectMemberResponse)
 def add_member(project_id: str, request: ProjectMemberRequest):

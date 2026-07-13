@@ -6,7 +6,7 @@ import ProjectManagement from "./pages/Project";
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/register" />} />
+      <Route path="/" element={<Navigate to="/login" />} />
 
       <Route path="/register" element={<Register />} />
 

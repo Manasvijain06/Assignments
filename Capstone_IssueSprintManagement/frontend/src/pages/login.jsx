@@ -1,9 +1,12 @@
 import { useState } from "react";
 import { loginUser } from "../services/auth-Service";
 import { validateLoginForm } from "../utils/validation";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import authImage from "../assets/auth-image.png";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 function Login() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -12,6 +15,7 @@ function Login() {
   const [errors, setErrors] = useState({});
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -44,21 +48,15 @@ function Login() {
     setLoading(true);
 
     try {
-      const encodedFormData = {
+      const encryptedFormData = {
         ...formData,
         password: btoa(formData.password),
       };
 
-      const response = await loginUser(encodedFormData);
-
-      setMessage(response.message);
+      const response = await loginUser(encryptedFormData);
 
       localStorage.setItem("user", JSON.stringify(response));
-
-      setFormData({
-        email: "",
-        password: "",
-      });
+      navigate("/projects");
     } catch (error) {
       setMessage(error.detail || "Login failed.");
     } finally {
@@ -67,44 +65,73 @@ function Login() {
   };
 
   return (
-    <div className="container">
-      <h2>User Login</h2>
+    <div className="auth-page">
+      <div className="auth-card">
+        <div className="auth-left">
+          <h1>
+            Issue & Sprint
+            <br />
+            Management
+          </h1>
+          <div className="auth-image">
+            <img src={authImage} alt="Authentication" />
+          </div>
 
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>Email</label>
-          <input
-            type="email"
-            name="email"
-            placeholder="Enter your email"
-            value={formData.email}
-            onChange={handleChange}
-          />
-          {errors.email && <p className="error">{errors.email}</p>}
+          <p>
+            Track issues, manage sprints and collaborate with your team in one
+            place.
+          </p>
         </div>
 
-        <div>
-          <label>Password</label>
-          <input
-            type="password"
-            name="password"
-            placeholder="Enter your password"
-            value={formData.password}
-            onChange={handleChange}
-          />
-          {errors.password && <p className="error">{errors.password}</p>}
+        <div className="auth-right">
+          <h2>Welcome Back!</h2>
+          <p className="auth-subtitle">Login to continue</p>
+
+          <form onSubmit={handleSubmit}>
+            <label>Email</label>
+            <input
+              type="email"
+              name="email"
+              placeholder="Enter your email"
+              value={formData.email}
+              onChange={handleChange}
+            />
+            {errors.email && <p className="error">{errors.email}</p>}
+
+            <div className="password-container">
+              <label>Password</label>
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                placeholder="Enter your password"
+                value={formData.password}
+                onChange={handleChange}
+              />
+              {errors.password && <p className="error">{errors.password}</p>}
+              <button
+                type="button"
+                className="toggle-password"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <FaEyeSlash /> : <FaEye />}
+              </button>
+            </div>
+
+            <button className="auth-btn" type="submit" disabled={loading}>
+              {loading ? "Logging in..." : "Login"}
+            </button>
+          </form>
+
+          {message && (
+            <p className={message.includes("successful") ? "success" : "error"}>
+              {message}
+            </p>
+          )}
+          <p className="auth-link">
+            Don't have an account? <Link to="/register">Register</Link>
+          </p>
         </div>
-
-        <button type="submit" disabled={loading}>
-          {loading ? "Logging in..." : "Login"}
-        </button>
-      </form>
-
-      {message && (
-        <p className={message.includes("successful") ? "success" : "error"}>
-          {message}
-        </p>
-      )}
+      </div>
     </div>
   );
 }
