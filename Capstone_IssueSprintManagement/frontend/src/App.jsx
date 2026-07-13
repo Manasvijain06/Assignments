@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Register from "./pages/Register";
 import Login from "./pages/login";
 import ProjectManagement from "./pages/Project";
+import Issue from "./pages/issue";
 
 function App() {
   return (
@@ -13,6 +14,8 @@ function App() {
       <Route path="/login" element={<Login />} />
 
       <Route path="/projects" element={<ProjectManagement />} />
+
+      <Route path="/issues" element={<Issue />} />
     </Routes>
   );
 }

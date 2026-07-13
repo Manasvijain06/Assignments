@@ -18,7 +18,11 @@ def test_issue_creation_success(mock_issue_service):
         json={
             "title": "Login bug",
             "description": "Login button is not working",
+            "type": "bug",
+            "priority": "high",
+            "assignee": "507f1f77bcf86cd799439013",
             "created_by": "507f1f77bcf86cd799439012",
+            "parent_id": None,
         },
     )
 
@@ -39,7 +43,11 @@ def test_create_issue_invalid_project_id(mock_issue_service):
         json={
             "title": "Login bug",
             "description": "Login button is not working",
+            "type": "bug",
+            "priority": "high",
+            "assignee": "507f1f77bcf86cd799439013",
             "created_by": "507f1f77bcf86cd799439012",
+            "parent_id": None,
         },
     )
 
